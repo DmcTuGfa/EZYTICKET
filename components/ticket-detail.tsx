@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Calendar, User, Tag, Clock, MessageSquare, Building2, Monitor, CheckCircle2 } from "lucide-react"
+import { EditTicketDialog } from "./edit-ticket-dialog"
 import type { Ticket, TicketStatus, TicketPriority, Activity } from "@/lib/types"
 import { updateTicket, getActivitiesByTicket } from "@/lib/db/tickets"
 import { useEffect, useState } from "react"
@@ -75,13 +76,21 @@ const causaLabels: Record<string, string> = {
   "proveedor-externo": "Proveedor externo"
 }
 
-function formatDate(dateString: string): string {
+function formatDateTime(dateString: string): string {
   return new Date(dateString).toLocaleDateString("es-ES", {
     day: "numeric",
     month: "long",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit"
+  })
+}
+
+function formatDateOnly(dateString: string): string {
+  return new Date(`${dateString}T00:00:00`).toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
   })
 }
 
@@ -195,21 +204,21 @@ export function TicketDetail({ ticket, onClose, onUpdate, onCloseTicket }: Ticke
 
               <div className="flex items-center gap-3 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Creado:</span>
-                <span className="text-foreground">{formatDate(ticket.createdAt)}</span>
+                <span className="text-muted-foreground">Fecha alta:</span>
+                <span className="text-foreground">{ticket.fechaAlta ? formatDateOnly(ticket.fechaAlta) : "-"}</span>
               </div>
 
               <div className="flex items-center gap-3 text-sm">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Actualizado:</span>
-                <span className="text-foreground">{formatDate(ticket.updatedAt)}</span>
+                <span className="text-foreground">{formatDateTime(ticket.updatedAt)}</span>
               </div>
 
               {ticket.closedAt && (
                 <div className="flex items-center gap-3 text-sm">
                   <CheckCircle2 className="h-4 w-4 text-success" />
                   <span className="text-muted-foreground">Cerrado:</span>
-                  <span className="text-foreground">{formatDate(ticket.closedAt)}</span>
+                  <span className="text-foreground">{formatDateTime(ticket.closedAt)}</span>
                 </div>
               )}
             </div>
@@ -282,6 +291,8 @@ export function TicketDetail({ ticket, onClose, onUpdate, onCloseTicket }: Ticke
                   </Select>
                 </div>
               </div>
+
+              <EditTicketDialog ticket={ticket} onUpdated={onUpdate} />
 
               {!isClosed && (
                 <Button 
