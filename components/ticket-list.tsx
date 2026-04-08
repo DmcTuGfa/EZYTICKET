@@ -54,8 +54,8 @@ const priorityLabels: Record<TicketPriority, string> = {
   urgente: "Urgente"
 }
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("es-ES", {
+function formatDateOnly(dateString: string): string {
+  return new Date(`${dateString}T00:00:00`).toLocaleDateString("es-ES", {
     day: "numeric",
     month: "short",
     year: "numeric"
@@ -193,7 +193,7 @@ export function TicketList({ tickets, onUpdate }: TicketListProps) {
                   <TableHead className="text-muted-foreground">Prioridad</TableHead>
                   <TableHead className="text-muted-foreground hidden md:table-cell">Area</TableHead>
                   <TableHead className="text-muted-foreground hidden lg:table-cell">Sistema</TableHead>
-                  <TableHead className="text-muted-foreground hidden xl:table-cell">Fecha</TableHead>
+                  <TableHead className="text-muted-foreground hidden xl:table-cell">Fecha alta</TableHead>
                   <TableHead className="text-muted-foreground text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -240,7 +240,7 @@ export function TicketList({ tickets, onUpdate }: TicketListProps) {
                         {ticket.sistemaAfectado || "-"}
                       </TableCell>
                       <TableCell className="hidden xl:table-cell text-muted-foreground">
-                        {formatDate(ticket.createdAt)}
+                        {ticket.fechaAlta ? formatDateOnly(ticket.fechaAlta) : "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
