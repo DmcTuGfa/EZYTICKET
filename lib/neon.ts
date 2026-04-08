@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless"
 const databaseUrl = process.env.DATABASE_URL
 
 if (!databaseUrl) {
-  console.warn("DATABASE_URL no está configurada. Se usará el modo local de respaldo.")
+  throw new Error("DATABASE_URL no está configurada")
 }
 
-export const sql = databaseUrl ? neon(databaseUrl) : null
+export const sql = neon(databaseUrl)

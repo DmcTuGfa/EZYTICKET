@@ -1,6 +1,8 @@
 import { HomeClient } from "./home-client"
 import { generateReport, getActivities, getStats, getTickets } from "@/lib/db/tickets"
 
+export const dynamic = "force-dynamic"
+
 export default async function Home() {
   const [tickets, activities, stats, report] = await Promise.all([
     getTickets(),

@@ -1,5 +1,6 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { sql } from "@/lib/neon"
 import type {
   Activity,
@@ -13,80 +14,6 @@ import type {
   TicketStats,
   TicketStatus,
 } from "@/lib/types"
-
-const initialTickets: Ticket[] = [
-  {
-    id: "TKT-001",
-    title: "Error al iniciar sesion",
-    description: "Los usuarios no pueden iniciar sesion desde la app movil",
-    status: "abierto",
-    priority: "alta",
-    category: "bug",
-    createdAt: "2026-04-06T10:00:00Z",
-    updatedAt: "2026-04-06T10:00:00Z",
-    reporter: "Juan Garcia",
-    assignee: "Maria Lopez",
-    areaResponsable: "TI",
-    sistemaAfectado: "App Movil",
-    fechaAlta: "2026-04-06",
-  },
-  {
-    id: "TKT-002",
-    title: "Solicitud de nueva funcionalidad",
-    description: "Agregar filtros avanzados en el panel de reportes",
-    status: "en-progreso",
-    priority: "media",
-    category: "mejora",
-    createdAt: "2026-04-05T14:30:00Z",
-    updatedAt: "2026-04-07T09:15:00Z",
-    reporter: "Ana Martinez",
-    assignee: "Carlos Ruiz",
-    areaResponsable: "Ventas",
-    sistemaAfectado: "CRM",
-    fechaAlta: "2026-04-05",
-  },
-  {
-    id: "TKT-003",
-    title: "Consulta sobre facturacion",
-    description: "Necesito informacion sobre el proceso de facturacion mensual",
-    status: "cerrado",
-    priority: "baja",
-    category: "consulta",
-    createdAt: "2026-04-04T08:00:00Z",
-    updatedAt: "2026-04-05T11:00:00Z",
-    closedAt: "2026-04-05T11:00:00Z",
-    reporter: "Pedro Sanchez",
-    areaResponsable: "Finanzas",
-    sistemaAfectado: "SAP",
-    clasificacionFinal: "operativa",
-    causaRaiz: "falta-informacion",
-    fechaAlta: "2026-04-04",
-  },
-]
-
-const initialActivities: Activity[] = [
-  {
-    id: "ACT-001",
-    ticketId: "TKT-001",
-    type: "created",
-    description: "Ticket creado",
-    timestamp: "2026-04-06T10:00:00Z",
-    user: "Juan Garcia",
-  },
-  {
-    id: "ACT-002",
-    ticketId: "TKT-002",
-    type: "status_change",
-    description: "Estado cambiado de 'abierto' a 'en-progreso'",
-    timestamp: "2026-04-07T09:15:00Z",
-    user: "Carlos Ruiz",
-    previousValue: "abierto",
-    newValue: "en-progreso",
-  },
-]
-
-let fallbackTickets = [...initialTickets]
-let fallbackActivities = [...initialActivities]
 
 function toIso(value?: string | null): string | undefined {
   return value ? new Date(value).toISOString() : undefined
@@ -131,25 +58,7 @@ function normalizeActivity(row: Record<string, any>): Activity {
   }
 }
 
-function nextId(prefix: string, current: string[]) {
-  const max = current.reduce((acc, item) => {
-    const num = Number(item.replace(`${prefix}-`, ""))
-    return Number.isFinite(num) ? Math.max(acc, num) : acc
-  }, 0)
-  return `${prefix}-${String(max + 1).padStart(3, "0")}`
-}
-
 async function addActivityInternal(data: Omit<Activity, "id" | "timestamp">): Promise<Activity> {
-  if (!sql) {
-    const newActivity: Activity = {
-      ...data,
-      id: nextId("ACT", fallbackActivities.map((a) => a.id)),
-      timestamp: new Date().toISOString(),
-    }
-    fallbackActivities = [newActivity, ...fallbackActivities]
-    return newActivity
-  }
-
   const inserted = await sql`
     insert into activities (ticket_id, type, description, user_name, previous_value, new_value)
     values (${data.ticketId}, ${data.type}, ${data.description}, ${data.user}, ${data.previousValue ?? null}, ${data.newValue ?? null})
@@ -160,37 +69,16 @@ async function addActivityInternal(data: Omit<Activity, "id" | "timestamp">): Pr
 }
 
 export async function getTickets(): Promise<Ticket[]> {
-  if (!sql) return [...fallbackTickets]
   const rows = await sql`select * from tickets order by created_at desc`
   return rows.map(normalizeTicket)
 }
 
 export async function getTicketById(id: string): Promise<Ticket | undefined> {
-  if (!sql) return fallbackTickets.find((t) => t.id === id)
   const rows = await sql`select * from tickets where id = ${id} limit 1`
   return rows[0] ? normalizeTicket(rows[0]) : undefined
 }
 
 export async function createTicket(data: Omit<Ticket, "id" | "createdAt" | "updatedAt">): Promise<Ticket> {
-  const now = new Date().toISOString()
-
-  if (!sql) {
-    const newTicket: Ticket = {
-      ...data,
-      id: nextId("TKT", fallbackTickets.map((t) => t.id)),
-      createdAt: now,
-      updatedAt: now,
-    }
-    fallbackTickets = [newTicket, ...fallbackTickets]
-    await addActivityInternal({
-      ticketId: newTicket.id,
-      type: "created",
-      description: `Ticket "${newTicket.title}" creado`,
-      user: newTicket.reporter,
-    })
-    return newTicket
-  }
-
   const rows = await sql`
     insert into tickets (
       title, description, status, priority, category, reporter, assignee,
@@ -211,53 +99,11 @@ export async function createTicket(data: Omit<Ticket, "id" | "createdAt" | "upda
     user: newTicket.reporter,
   })
 
+  revalidatePath("/")
   return newTicket
 }
 
 export async function updateTicket(id: string, updates: Partial<Ticket>): Promise<Ticket | null> {
-  if (!sql) {
-    const index = fallbackTickets.findIndex((t) => t.id === id)
-    if (index === -1) return null
-    const oldTicket = fallbackTickets[index]
-    const updatedTicket: Ticket = {
-      ...oldTicket,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-      closedAt:
-        (updates.status === "cerrado" || updates.status === "resuelto") && !oldTicket.closedAt
-          ? new Date().toISOString()
-          : oldTicket.closedAt,
-    }
-    fallbackTickets[index] = updatedTicket
-
-    if (updates.status && updates.status !== oldTicket.status) {
-      const isClosed = updates.status === "cerrado" || updates.status === "resuelto"
-      await addActivityInternal({
-        ticketId: id,
-        type: isClosed ? "closed" : "status_change",
-        description: isClosed
-          ? `Ticket cerrado - Clasificacion: ${updates.clasificacionFinal || "N/A"}, Causa: ${updates.causaRaiz || "N/A"}`
-          : `Estado cambiado de "${oldTicket.status}" a "${updates.status}"`,
-        user: "Sistema",
-        previousValue: oldTicket.status,
-        newValue: updates.status,
-      })
-    }
-
-    if (updates.priority && updates.priority !== oldTicket.priority) {
-      await addActivityInternal({
-        ticketId: id,
-        type: "priority_change",
-        description: `Prioridad cambiada de "${oldTicket.priority}" a "${updates.priority}"`,
-        user: "Sistema",
-        previousValue: oldTicket.priority,
-        newValue: updates.priority,
-      })
-    }
-
-    return updatedTicket
-  }
-
   const current = await getTicketById(id)
   if (!current) return null
 
@@ -310,28 +156,18 @@ export async function updateTicket(id: string, updates: Partial<Ticket>): Promis
     })
   }
 
+  revalidatePath("/")
   return updatedTicket
 }
 
 export async function deleteTicket(id: string): Promise<boolean> {
-  if (!sql) {
-    const initialLength = fallbackTickets.length
-    fallbackTickets = fallbackTickets.filter((t) => t.id !== id)
-    fallbackActivities = fallbackActivities.filter((a) => a.ticketId !== id)
-    return fallbackTickets.length < initialLength
-  }
-
   await sql`delete from activities where ticket_id = ${id}`
   const result = await sql`delete from tickets where id = ${id} returning id`
+  revalidatePath("/")
   return result.length > 0
 }
 
 export async function getActivities(limit?: number): Promise<Activity[]> {
-  if (!sql) {
-    const sorted = [...fallbackActivities].sort((a, b) => +new Date(b.timestamp) - +new Date(a.timestamp))
-    return typeof limit === "number" ? sorted.slice(0, limit) : sorted
-  }
-
   const rows = typeof limit === "number"
     ? await sql`select * from activities order by timestamp desc limit ${limit}`
     : await sql`select * from activities order by timestamp desc`
@@ -340,18 +176,14 @@ export async function getActivities(limit?: number): Promise<Activity[]> {
 }
 
 export async function getActivitiesByTicket(ticketId: string): Promise<Activity[]> {
-  if (!sql) {
-    return fallbackActivities
-      .filter((a) => a.ticketId === ticketId)
-      .sort((a, b) => +new Date(b.timestamp) - +new Date(a.timestamp))
-  }
-
   const rows = await sql`select * from activities where ticket_id = ${ticketId} order by timestamp desc`
   return rows.map(normalizeActivity)
 }
 
 export async function addActivity(data: Omit<Activity, "id" | "timestamp">): Promise<Activity> {
-  return addActivityInternal(data)
+  const activity = await addActivityInternal(data)
+  revalidatePath("/")
+  return activity
 }
 
 export async function getStats(): Promise<TicketStats> {
