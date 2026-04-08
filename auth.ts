@@ -3,56 +3,59 @@ import Google from "next-auth/providers/google"
 import { sql } from "@/lib/neon"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  trustHost: true,
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      authorization: {
+        params: {
+          prompt: "select_account", // fuerza selector de cuenta
+        },
+      },
     }),
   ],
-  pages: {
-    signIn: "/login",
-  },
+
   callbacks: {
     async signIn({ user }) {
-      if (!user.email) return false
+      try {
+        // validar que venga email
+        if (!user?.email) {
+          console.error("No hay email en user")
+          return false
+        }
 
-      const result = await sql`
-        select email, active, role
-        from authorized_users
-        where lower(email) = lower(${user.email})
-        limit 1
-      `
+        // consultar BD
+        const result = await sql`
+          SELECT email, active
+          FROM authorized_users
+          WHERE email = ${user.email}
+          LIMIT 1
+        `
 
-      if (!result.length) return false
-      if (!result[0].active) return false
-      return true
-    },
-    async jwt({ token, user }) {
-      const email = user?.email ?? token.email
-      if (!email) return token
+        // no existe
+        if (!result.length) {
+          console.log("Usuario no autorizado:", user.email)
+          return false
+        }
 
-      const result = await sql`
-        select role, active
-        from authorized_users
-        where lower(email) = lower(${email})
-        limit 1
-      `
+        // no activo
+        if (!result[0].active) {
+          console.log("Usuario inactivo:", user.email)
+          return false
+        }
 
-      if (result[0]) {
-        token.role = result[0].role
-        token.active = result[0].active
+        // autorizado
+        console.log("Acceso permitido:", user.email)
+        return true
+
+      } catch (error) {
+        console.error("ERROR EN AUTH:", error)
+        return false
       }
-
-      return token
     },
-    async session({ session, token }) {
-      if (session.user) {
-        ;(session.user as typeof session.user & { role?: string; active?: boolean }).role = token.role as string | undefined
-        ;(session.user as typeof session.user & { active?: boolean }).active = token.active as boolean | undefined
-      }
+  },
 
-      return session
-    },
+  pages: {
+    signIn: "/login", // redirige a tu pantalla
   },
 })
