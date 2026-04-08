@@ -1,18 +1,29 @@
-import { HomeClient } from "./home-client"
 import { auth } from "@/auth"
-import { generateReport, getActivities, getStats, getTickets } from "@/lib/db/tickets"
+import { redirect } from "next/navigation"
+import HomeClient from "./home-client"
+import { getActivities, getStats, getTickets } from "@/lib/db/tickets"
 
 export const dynamic = "force-dynamic"
 
-export default async function Home() {
+export default async function Page() {
   const session = await auth()
 
-  const [tickets, activities, stats, report] = await Promise.all([
+  if (!session?.user?.email) {
+    redirect("/login")
+  }
+
+  const [tickets, activities, stats] = await Promise.all([
     getTickets(),
     getActivities(),
     getStats(),
-    generateReport(),
   ])
 
-  return <HomeClient tickets={tickets} activities={activities} stats={stats} report={report} user={session?.user ?? null} />
+  return (
+    <HomeClient
+      tickets={tickets}
+      activities={activities}
+      stats={stats}
+      user={session.user}
+    />
+  )
 }
