@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ActivityFeed } from "@/components/activity-feed"
@@ -8,6 +9,8 @@ import { ReportSection } from "@/components/report-section"
 import { StatsCards } from "@/components/stats-cards"
 import { TicketCharts } from "@/components/ticket-charts"
 import { TicketForm } from "@/components/ticket-form"
+import { Button } from "@/components/ui/button"
+import { signOutAction } from "@/actions/auth-actions"
 import { TicketList } from "@/components/ticket-list"
 import type { Activity, Ticket, TicketReportRow, TicketStats } from "@/lib/types"
 
@@ -18,9 +21,15 @@ interface HomeClientProps {
   activities: Activity[]
   stats: TicketStats
   report: TicketReportRow[]
+  user: {
+    name?: string | null
+    email?: string | null
+    image?: string | null
+    role?: string | null
+  } | null
 }
 
-export function HomeClient({ tickets, activities, stats, report }: HomeClientProps) {
+export function HomeClient({ tickets, activities, stats, report, user }: HomeClientProps) {
   const [currentView, setCurrentView] = useState<View>("dashboard")
   const router = useRouter()
 
@@ -58,7 +67,35 @@ export function HomeClient({ tickets, activities, stats, report }: HomeClientPro
               {currentView === "reports" && "Genera y exporta reportes del sistema"}
             </p>
           </div>
-          <TicketForm onTicketCreated={refresh} />
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="hidden md:flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
+                {user.image ? (
+                  <Image
+                    src={user.image}
+                    alt={user.name || user.email || "Usuario"}
+                    width={32}
+                    height={32}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                    {(user.name || user.email || "U").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="leading-tight">
+                  <p className="text-sm font-medium text-foreground">{user.name || "Usuario"}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
+              </div>
+            )}
+            <form action={signOutAction}>
+              <Button type="submit" variant="outline">
+                Cerrar sesión
+              </Button>
+            </form>
+            <TicketForm onTicketCreated={refresh} />
+          </div>
         </header>
 
         <div className="p-6 space-y-6">

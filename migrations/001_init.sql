@@ -30,3 +30,12 @@ create table if not exists activities (
   previous_value text,
   new_value text
 );
+
+create table if not exists authorized_users (
+  id serial primary key,
+  email text unique not null,
+  name text,
+  active boolean not null default true,
+  role text not null default 'user',
+  created_at timestamptz not null default now()
+);
