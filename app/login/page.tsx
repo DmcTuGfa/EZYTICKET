@@ -13,7 +13,10 @@ export default async function LoginPage({
   searchParams?: Promise<{ error?: string }>
 }) {
   const session = await auth()
-  if (session?.user) {
+  const isLoggedIn = Boolean(session?.user?.email)
+  const isActive = Boolean((session?.user as { active?: boolean } | undefined)?.active)
+
+  if (isLoggedIn && isActive) {
     redirect("/")
   }
 
@@ -47,9 +50,7 @@ export default async function LoginPage({
               <LockKeyhole className="h-4 w-4" />
               Validación de acceso
             </div>
-            <p className="mt-1">
-              Después del login, la app valida tu correo contra la tabla <code>authorized_users</code> en Neon.
-            </p>
+            <p className="mt-1">Después del login, la app valida tu correo contra la tabla <code>authorized_users</code> en Neon.</p>
           </div>
 
           <form action={googleSignInAction}>

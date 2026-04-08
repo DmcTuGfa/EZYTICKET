@@ -2,9 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 
 export default auth((req) => {
-  const isLoggedIn = !!req.auth
   const { pathname } = req.nextUrl
-
   const isPublicPath =
     pathname === "/login" ||
     pathname.startsWith("/api/auth") ||
@@ -15,11 +13,18 @@ export default auth((req) => {
     pathname === "/icon-dark-32x32.png" ||
     pathname === "/apple-icon.png"
 
-  if (!isLoggedIn && !isPublicPath) {
-    return NextResponse.redirect(new URL("/login", req.url))
+  const isLoggedIn = Boolean(req.auth?.user?.email)
+  const isActive = Boolean((req.auth?.user as { active?: boolean } | undefined)?.active)
+
+  if (!isPublicPath && (!isLoggedIn || !isActive)) {
+    const loginUrl = new URL("/login", req.url)
+    if (isLoggedIn && !isActive) {
+      loginUrl.searchParams.set("error", "AccessDenied")
+    }
+    return NextResponse.redirect(loginUrl)
   }
 
-  if (isLoggedIn && pathname === "/login") {
+  if (pathname === "/login" && isLoggedIn && isActive) {
     return NextResponse.redirect(new URL("/", req.url))
   }
 
@@ -27,5 +32,5 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 }

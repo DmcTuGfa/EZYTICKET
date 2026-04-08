@@ -2,46 +2,56 @@ import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import { sql } from "@/lib/neon"
 
+async function getAuthorizedUser(email: string) {
+  const result = await sql`
+    select email, active, role
+    from authorized_users
+    where lower(email) = lower(${email})
+    limit 1
+  `
+
+  return result[0] ?? null
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      authorization: {
+        params: {
+          prompt: "select_account",
+        },
+      },
     }),
   ],
-  pages: {
-    signIn: "/login",
-  },
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false
 
-      const result = await sql`
-        select email, active, role
-        from authorized_users
-        where lower(email) = lower(${user.email})
-        limit 1
-      `
+      const authorizedUser = await getAuthorizedUser(user.email)
+      if (!authorizedUser) return false
+      if (!authorizedUser.active) return false
 
-      if (!result.length) return false
-      if (!result[0].active) return false
       return true
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       const email = user?.email ?? token.email
-      if (!email) return token
+      if (!email) {
+        token.active = false
+        token.role = undefined
+        return token
+      }
 
-      const result = await sql`
-        select role, active
-        from authorized_users
-        where lower(email) = lower(${email})
-        limit 1
-      `
-
-      if (result[0]) {
-        token.role = result[0].role
-        token.active = result[0].active
+      if (user || trigger === "update" || token.active === undefined) {
+        const authorizedUser = await getAuthorizedUser(email)
+        token.active = Boolean(authorizedUser?.active)
+        token.role = authorizedUser?.role ?? undefined
       }
 
       return token
@@ -49,7 +59,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         ;(session.user as typeof session.user & { role?: string; active?: boolean }).role = token.role as string | undefined
-        ;(session.user as typeof session.user & { active?: boolean }).active = token.active as boolean | undefined
+        ;(session.user as typeof session.user & { active?: boolean }).active = Boolean(token.active)
       }
 
       return session
