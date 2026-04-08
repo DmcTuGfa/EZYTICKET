@@ -1,13 +1,6 @@
-import { auth, signIn } from "@/auth"
-import { redirect } from "next/navigation"
+import { signIn } from "@/auth"
 
-export default async function LoginPage() {
-  const session = await auth()
-
-  if (session?.user?.email) {
-    redirect("/")
-  }
-
+export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-950 p-8 shadow-xl">
