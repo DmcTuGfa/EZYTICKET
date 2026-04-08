@@ -46,10 +46,9 @@ export interface Ticket {
   closedAt?: string
   assignee?: string
   reporter: string
-  // Nuevos campos
   areaResponsable?: AreaResponsable
   sistemaAfectado?: string
-  // Campos obligatorios al cerrar
+  fechaAlta?: string
   clasificacionFinal?: ClasificacionFinal
   causaRaiz?: CausaRaiz
 }
@@ -73,10 +72,9 @@ export interface TicketStats {
   byClasificacion: Record<ClasificacionFinal, number>
   byArea: Record<AreaResponsable, number>
   recentActivity: number
-  avgResolutionTime: number // en horas
+  avgResolutionTime: number
 }
 
-// Para exportación de reportes
 export interface TicketReportRow {
   id: string
   fecha: string

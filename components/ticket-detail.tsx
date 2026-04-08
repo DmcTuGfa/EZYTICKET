@@ -14,8 +14,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Calendar, User, Tag, Clock, MessageSquare, Building2, Monitor, CheckCircle2 } from "lucide-react"
 import type { Ticket, TicketStatus, TicketPriority, Activity } from "@/lib/types"
-import { updateTicket, getActivitiesByTicket } from "@/lib/ticket-store"
+import { updateTicket, getActivitiesByTicket } from "@/lib/db/tickets"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 interface TicketDetailProps {
   ticket: Ticket | null
@@ -101,29 +102,35 @@ function formatTimeAgo(dateString: string): string {
 
 export function TicketDetail({ ticket, onClose, onUpdate, onCloseTicket }: TicketDetailProps) {
   const [activities, setActivities] = useState<Activity[]>([])
+  const router = useRouter()
 
   useEffect(() => {
-    if (ticket) {
-      setActivities(getActivitiesByTicket(ticket.id))
+    async function loadActivities() {
+      if (ticket) {
+        setActivities(await getActivitiesByTicket(ticket.id))
+      }
     }
+    loadActivities()
   }, [ticket])
 
   if (!ticket) return null
 
-  const handleStatusChange = (newStatus: TicketStatus) => {
+  const handleStatusChange = async (newStatus: TicketStatus) => {
     if (newStatus === "cerrado" || newStatus === "resuelto") {
       onCloseTicket?.({ ...ticket, status: newStatus })
     } else {
-      updateTicket(ticket.id, { status: newStatus })
-      setActivities(getActivitiesByTicket(ticket.id))
+      await updateTicket(ticket.id, { status: newStatus })
+      setActivities(await getActivitiesByTicket(ticket.id))
       onUpdate?.()
+      router.refresh()
     }
   }
 
-  const handlePriorityChange = (newPriority: TicketPriority) => {
-    updateTicket(ticket.id, { priority: newPriority })
-    setActivities(getActivitiesByTicket(ticket.id))
+  const handlePriorityChange = async (newPriority: TicketPriority) => {
+    await updateTicket(ticket.id, { priority: newPriority })
+    setActivities(await getActivitiesByTicket(ticket.id))
     onUpdate?.()
+    router.refresh()
   }
 
   const isClosed = ticket.status === "cerrado" || ticket.status === "resuelto"

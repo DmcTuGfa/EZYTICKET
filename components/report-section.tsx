@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Download, FileSpreadsheet, FileText } from "lucide-react"
-import { generateReport, exportToCSV } from "@/lib/ticket-store"
 import type { TicketStats } from "@/lib/types"
 
 interface ReportSectionProps {
   stats: TicketStats
+  report: import("@/lib/types").TicketReportRow[]
 }
 
 const statusColors: Record<string, string> = {
@@ -32,11 +32,21 @@ const statusLabels: Record<string, string> = {
   cerrado: "Cerrado"
 }
 
-export function ReportSection({ stats }: ReportSectionProps) {
-  const report = generateReport()
+export function ReportSection({ stats, report }: ReportSectionProps) {
 
   const handleExportCSV = () => {
-    const csv = exportToCSV()
+    const headers = ["ID", "Fecha", "Titulo", "Area", "Tipo", "Causa", "Tiempo Resolucion", "Estado"]
+    const rows = report.map((r) => [
+      r.id,
+      r.fecha,
+      `"${r.titulo.replace(/"/g, '""')}"`,
+      r.area,
+      r.tipo,
+      r.causa,
+      r.tiempoResolucion,
+      r.estado,
+    ])
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)

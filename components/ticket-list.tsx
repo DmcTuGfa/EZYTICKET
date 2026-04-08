@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -10,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, MoreHorizontal, Eye, Trash2, Filter, Download } from "lucide-react"
 import type { Ticket, TicketStatus, TicketPriority, AreaResponsable } from "@/lib/types"
-import { updateTicket, deleteTicket, exportToCSV } from "@/lib/ticket-store"
+import { updateTicket, deleteTicket, exportToCSV } from "@/lib/db/tickets"
 import { TicketDetail } from "./ticket-detail"
 import { CloseTicketDialog } from "./close-ticket-dialog"
 
@@ -68,6 +69,7 @@ export function TicketList({ tickets, onUpdate }: TicketListProps) {
   const [areaFilter, setAreaFilter] = useState<AreaResponsable | "todos">("todos")
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [ticketToClose, setTicketToClose] = useState<Ticket | null>(null)
+  const router = useRouter()
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesSearch = ticket.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -82,25 +84,27 @@ export function TicketList({ tickets, onUpdate }: TicketListProps) {
     return matchesSearch && matchesStatus && matchesPriority && matchesArea
   })
 
-  const handleStatusChange = (ticket: Ticket, newStatus: TicketStatus) => {
+  const handleStatusChange = async (ticket: Ticket, newStatus: TicketStatus) => {
     // Si se va a cerrar o resolver, abrir el diálogo de cierre
     if (newStatus === "cerrado" || newStatus === "resuelto") {
       setTicketToClose({ ...ticket, status: newStatus })
     } else {
-      updateTicket(ticket.id, { status: newStatus })
+      await updateTicket(ticket.id, { status: newStatus })
       onUpdate?.()
+      router.refresh()
     }
   }
 
-  const handleDelete = (ticketId: string) => {
+  const handleDelete = async (ticketId: string) => {
     if (confirm("¿Estas seguro de eliminar este ticket?")) {
-      deleteTicket(ticketId)
+      await deleteTicket(ticketId)
       onUpdate?.()
+      router.refresh()
     }
   }
 
-  const handleExport = () => {
-    const csv = exportToCSV()
+  const handleExport = async () => {
+    const csv = await exportToCSV()
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
@@ -254,7 +258,7 @@ export function TicketList({ tickets, onUpdate }: TicketListProps) {
                               Ver detalles
                             </DropdownMenuItem>
                             <DropdownMenuItem 
-                              onClick={() => handleDelete(ticket.id)}
+                              onClick={async () => await handleDelete(ticket.id)}
                               className="cursor-pointer text-destructive focus:text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
@@ -285,15 +289,16 @@ export function TicketList({ tickets, onUpdate }: TicketListProps) {
       <CloseTicketDialog
         ticket={ticketToClose}
         onClose={() => setTicketToClose(null)}
-        onConfirm={(data) => {
+        onConfirm={async (data) => {
           if (ticketToClose) {
-            updateTicket(ticketToClose.id, {
+            await updateTicket(ticketToClose.id, {
               status: ticketToClose.status,
               clasificacionFinal: data.clasificacionFinal,
               causaRaiz: data.causaRaiz
             })
             setTicketToClose(null)
             onUpdate?.()
+            router.refresh()
           }
         }}
       />
