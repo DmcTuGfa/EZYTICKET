@@ -3,6 +3,8 @@ import Google from "next-auth/providers/google"
 import { sql } from "@/lib/neon"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
+
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
@@ -14,6 +16,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+
   callbacks: {
     async signIn({ user }) {
       try {
@@ -26,16 +29,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           LIMIT 1
         `
 
-        if (!result.length) return false
+        if (!result?.length) return false
         if (!result[0].active) return false
 
         return true
       } catch (error) {
-        console.error("ERROR EN AUTH:", error)
+        console.error("ERROR AUTH:", error)
         return false
       }
     },
   },
+
   pages: {
     signIn: "/login",
   },
