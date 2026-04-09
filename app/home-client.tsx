@@ -10,7 +10,6 @@ import { StatsCards } from "@/components/stats-cards"
 import { TicketCharts } from "@/components/ticket-charts"
 import { TicketForm } from "@/components/ticket-form"
 import { Button } from "@/components/ui/button"
-import { signOutAction } from "@/actions/auth-actions"
 import { TicketList } from "@/components/ticket-list"
 import type { Activity, Ticket, TicketReportRow, TicketStats } from "@/lib/types"
 
@@ -29,11 +28,17 @@ interface HomeClientProps {
   } | null
 }
 
-export function HomeClient({ tickets, activities, stats, report, user }: HomeClientProps) {
+export default function HomeClient({ tickets, activities, stats, report, user }: HomeClientProps) {
   const [currentView, setCurrentView] = useState<View>("dashboard")
   const router = useRouter()
 
   const refresh = useCallback(() => {
+    router.refresh()
+  }, [router])
+
+  const handleLogout = useCallback(async () => {
+    await fetch("/api/logout", { method: "POST" })
+    router.push("/login")
     router.refresh()
   }, [router])
 
@@ -89,11 +94,9 @@ export function HomeClient({ tickets, activities, stats, report, user }: HomeCli
                 </div>
               </div>
             )}
-            <form action={signOutAction}>
-              <Button type="submit" variant="outline">
-                Cerrar sesión
-              </Button>
-            </form>
+            <Button type="button" variant="outline" onClick={handleLogout}>
+              Cerrar sesión
+            </Button>
             <TicketForm onTicketCreated={refresh} />
           </div>
         </header>

@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import HomeClient from "./home-client"
-import { getActivities, getStats, getTickets } from "@/lib/db/tickets"
+import { generateReport, getActivities, getStats, getTickets } from "@/lib/db/tickets"
 
 export const dynamic = "force-dynamic"
 
@@ -13,20 +13,20 @@ export default async function Page() {
     redirect("/login")
   }
 
-  const user = JSON.parse(session)
+  let user = null
 
-  const [tickets, activities, stats] = await Promise.all([
+  try {
+    user = JSON.parse(session)
+  } catch {
+    redirect("/login")
+  }
+
+  const [tickets, activities, stats, report] = await Promise.all([
     getTickets(),
     getActivities(),
     getStats(),
+    generateReport(),
   ])
 
-  return (
-    <HomeClient
-      tickets={tickets}
-      activities={activities}
-      stats={stats}
-      user={user}
-    />
-  )
+  return <HomeClient tickets={tickets} activities={activities} stats={stats} report={report} user={user} />
 }

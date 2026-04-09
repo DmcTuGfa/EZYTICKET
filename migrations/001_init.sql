@@ -35,7 +35,11 @@ create table if not exists authorized_users (
   id serial primary key,
   email text unique not null,
   name text,
+  password text,
   active boolean not null default true,
   role text not null default 'user',
   created_at timestamptz not null default now()
 );
+
+
+alter table authorized_users add column if not exists password text;
