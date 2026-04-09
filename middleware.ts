@@ -1,27 +1,56 @@
-import { NextResponse } from "next/server"
-import { auth } from "@/auth"
+import NextAuth from "next-auth"
+import Google from "next-auth/providers/google"
+import { sql } from "@/lib/neon"
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth
-  const { pathname } = req.nextUrl
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
 
-  const isPublicPath =
-    pathname === "/login" ||
-    pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/_next") ||
-    pathname === "/favicon.ico" ||
-    pathname === "/icon.svg" ||
-    pathname === "/icon-light-32x32.png" ||
-    pathname === "/icon-dark-32x32.png" ||
-    pathname === "/apple-icon.png"
+  providers: [
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      authorization: {
+        params: {
+          prompt: "select_account",
+        },
+      },
+    }),
+  ],
 
-  if (!isLoggedIn && !isPublicPath) {
-    return NextResponse.redirect(new URL("/login", req.url))
-  }
+  callbacks: {
+    async signIn({ user }) {
+      try {
+        if (!user?.email) {
+          console.log("No email")
+          return false
+        }
 
-  return NextResponse.next()
+        const result = await sql`
+          SELECT email, active
+          FROM authorized_users
+          WHERE email = ${user.email}
+          LIMIT 1
+        `
+
+        if (!result || result.length === 0) {
+          console.log("Usuario no autorizado:", user.email)
+          return false
+        }
+
+        if (!result[0].active) {
+          console.log("Usuario inactivo:", user.email)
+          return false
+        }
+
+        return true
+      } catch (error) {
+        console.error("ERROR AUTH:", error)
+        return false
+      }
+    },
+  },
+
+  pages: {
+    signIn: "/login",
+  },
 })
-
-export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
-}
