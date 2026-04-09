@@ -1,6 +1,5 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import { sql } from "@/lib/neon"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -19,24 +18,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   callbacks: {
     async signIn({ user }) {
-      try {
-        if (!user?.email) return false
-
-        const result = await sql`
-          SELECT email, active
-          FROM authorized_users
-          WHERE email = ${user.email}
-          LIMIT 1
-        `
-
-        if (!result?.length) return false
-        if (!result[0].active) return false
-
-        return true
-      } catch (error) {
-        console.error("ERROR AUTH:", error)
-        return false
-      }
+      console.log("LOGIN OK:", user?.email)
+      return true
     },
   },
 
