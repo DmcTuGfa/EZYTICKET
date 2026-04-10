@@ -38,10 +38,8 @@ const statusLabels: Record<string, string> = {
 
 function openPrintableTable(title: string, headers: string[], rows: string[][]) {
   const printableRows = rows
-    .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("
-")}</tr>`)
-    .join("
-")
+    .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
+    .join("")
 
   const html = `
     <html>
@@ -58,8 +56,7 @@ function openPrintableTable(title: string, headers: string[], rows: string[][]) 
       <body>
         <h1>${title}</h1>
         <table>
-          <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("
-")}</tr></thead>
+          <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
           <tbody>${printableRows}</tbody>
         </table>
       </body>
