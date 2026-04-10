@@ -93,7 +93,7 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
   }
 
   const handleExportMaintenancesCSV = () => {
-    const headers = ["Folio", "Tipo", "Estado", "Sede", "Titulo", "Tecnico", "Solicitado por", "Fecha"]
+    const headers = ["Folio", "Tipo", "Estado", "Sede", "Titulo", "Tecnico", "Serie", "Responsable", "Recibido por", "Fecha"]
     const rows = maintenances.map((m) => [
       m.folio,
       m.maintenanceType,
@@ -101,7 +101,9 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
       `"${(m.siteName || `Sede ${m.siteId}`).replace(/"/g, '""')}"`,
       `"${(m.title || "").replace(/"/g, '""')}"`,
       `"${(m.technicianName || "").replace(/"/g, '""')}"`,
-      `"${(m.requestedBy || "").replace(/"/g, '""')}"`,
+      `"${(m.serialNumber || "").replace(/"/g, '""')}"`,
+      `"${(m.responsibleName || "").replace(/"/g, '""')}"`,
+      `"${(m.receivedBy || "").replace(/"/g, '""')}"`,
       new Date(m.createdAt).toLocaleDateString("es-MX"),
     ])
     const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
@@ -119,12 +121,15 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
   }
 
   const handleExportMaintenancesPDF = () => {
-    const headers = ["Folio", "Sede", "Tipo", "Titulo", "Estado"]
+    const headers = ["Folio", "Sede", "Tipo", "Titulo", "Serie", "Responsable", "Recibido por", "Estado"]
     const rows = maintenances.slice(0, 50).map((m) => [
       m.folio,
       m.siteName || `Sede ${m.siteId}`,
       m.maintenanceType,
       m.title || "",
+      m.serialNumber || "",
+      m.responsibleName || "",
+      m.receivedBy || "",
       statusLabels[m.status] || m.status,
     ])
     openPrintableTable("Reporte de Mantenimientos", headers, rows)

@@ -29,7 +29,9 @@ function normalizeMaintenance(row: Record<string, any>): Maintenance {
     description: row.description || undefined,
     reportedIssue: row.reported_issue || undefined,
     technicianName: row.technician_name || undefined,
-    requestedBy: row.requested_by || undefined,
+    serialNumber: row.serial_number || undefined,
+    responsibleName: row.responsible_name || undefined,
+    receivedBy: row.received_by || row.requested_by || undefined,
     signatureData: row.signature_data || undefined,
     createdAt: toIso(row.created_at),
     updatedAt: row.updated_at ? toIso(row.updated_at) : undefined,
@@ -95,7 +97,7 @@ export async function createMaintenance(data: Omit<Maintenance, "id" | "folio" |
   const rows = await sql`
     insert into maintenances (
       folio, maintenance_type, status, site_id, title, description, reported_issue,
-      technician_name, requested_by, signature_data, created_at, updated_at
+      technician_name, serial_number, responsible_name, received_by, signature_data, created_at, updated_at
     ) values (
       ${folio},
       ${data.maintenanceType},
@@ -105,7 +107,9 @@ export async function createMaintenance(data: Omit<Maintenance, "id" | "folio" |
       ${data.description ?? null},
       ${data.reportedIssue ?? null},
       ${data.technicianName ?? null},
-      ${data.requestedBy ?? null},
+      ${data.serialNumber ?? null},
+      ${data.responsibleName ?? null},
+      ${data.receivedBy ?? null},
       ${data.signatureData ?? null},
       now(),
       now()
@@ -130,7 +134,9 @@ export async function updateMaintenance(id: number, updates: Partial<Maintenance
       description = coalesce(${updates.description ?? null}, description),
       reported_issue = coalesce(${updates.reportedIssue ?? null}, reported_issue),
       technician_name = coalesce(${updates.technicianName ?? null}, technician_name),
-      requested_by = coalesce(${updates.requestedBy ?? null}, requested_by),
+      serial_number = coalesce(${updates.serialNumber ?? null}, serial_number),
+      responsible_name = coalesce(${updates.responsibleName ?? null}, responsible_name),
+      received_by = coalesce(${updates.receivedBy ?? null}, received_by),
       signature_data = coalesce(${updates.signatureData ?? null}, signature_data),
       updated_at = now()
     where id = ${id}
@@ -148,6 +154,7 @@ export async function closeMaintenance(id: number, confirmedBy: string, signatur
     update maintenances
     set
       status = 'cerrado',
+      received_by = ${confirmedBy},
       signature_data = ${signatureData},
       updated_at = now()
     where id = ${id}

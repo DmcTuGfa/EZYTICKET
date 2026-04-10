@@ -30,3 +30,9 @@ create table if not exists activities (
   previous_value text,
   new_value text
 );
+
+
+-- Campos extra para mantenimientos
+alter table if exists maintenances add column if not exists serial_number text;
+alter table if exists maintenances add column if not exists responsible_name text;
+alter table if exists maintenances add column if not exists received_by text;

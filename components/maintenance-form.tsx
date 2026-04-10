@@ -29,8 +29,25 @@ export function MaintenanceForm({ sites, onCreated }: MaintenanceFormProps) {
     description: "",
     reportedIssue: "",
     technicianName: "",
-    requestedBy: "",
+    serialNumber: "",
+    responsibleName: "",
+    receivedBy: "",
   })
+
+  const resetForm = () => {
+    setFormData({
+      maintenanceType: "preventivo",
+      status: "abierto",
+      siteId: sites[0]?.id ?? 1,
+      title: "",
+      description: "",
+      reportedIssue: "",
+      technicianName: "",
+      serialNumber: "",
+      responsibleName: "",
+      receivedBy: "",
+    })
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,16 +55,7 @@ export function MaintenanceForm({ sites, onCreated }: MaintenanceFormProps) {
     try {
       await createMaintenance(formData)
       setOpen(false)
-      setFormData({
-        maintenanceType: "preventivo",
-        status: "abierto",
-        siteId: sites[0]?.id ?? 1,
-        title: "",
-        description: "",
-        reportedIssue: "",
-        technicianName: "",
-        requestedBy: "",
-      })
+      resetForm()
       onCreated?.()
       router.refresh()
     } finally {
@@ -63,7 +71,7 @@ export function MaintenanceForm({ sites, onCreated }: MaintenanceFormProps) {
           Nuevo Mantenimiento
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[650px] bg-card border-border max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[680px] bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nuevo mantenimiento</DialogTitle>
           <DialogDescription>Registra un mantenimiento preventivo o correctivo.</DialogDescription>
@@ -92,28 +100,44 @@ export function MaintenanceForm({ sites, onCreated }: MaintenanceFormProps) {
               </Select>
             </div>
           </div>
+
           <div className="space-y-2">
             <Label>Titulo</Label>
             <Input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} required />
           </div>
+
           <div className="space-y-2">
             <Label>Descripcion</Label>
             <Textarea value={formData.description} onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))} rows={3} />
           </div>
+
           <div className="space-y-2">
             <Label>Problema reportado</Label>
             <Textarea value={formData.reportedIssue} onChange={(e) => setFormData((prev) => ({ ...prev, reportedIssue: e.target.value }))} rows={3} />
           </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Tecnico</Label>
               <Input value={formData.technicianName} onChange={(e) => setFormData((prev) => ({ ...prev, technicianName: e.target.value }))} />
             </div>
             <div className="space-y-2">
-              <Label>Solicitado por</Label>
-              <Input value={formData.requestedBy} onChange={(e) => setFormData((prev) => ({ ...prev, requestedBy: e.target.value }))} />
+              <Label>Numero de serie</Label>
+              <Input value={formData.serialNumber} onChange={(e) => setFormData((prev) => ({ ...prev, serialNumber: e.target.value }))} />
             </div>
           </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Nombre del responsable</Label>
+              <Input value={formData.responsibleName} onChange={(e) => setFormData((prev) => ({ ...prev, responsibleName: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Recibido por</Label>
+              <Input value={formData.receivedBy} onChange={(e) => setFormData((prev) => ({ ...prev, receivedBy: e.target.value }))} />
+            </div>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button type="submit" disabled={submitting}>{submitting ? "Guardando..." : "Guardar mantenimiento"}</Button>

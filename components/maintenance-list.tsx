@@ -146,7 +146,9 @@ export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
               <div class="card full"><span class="label">Descripción</span><div class="value">${escapeHtml(item.description || "Sin descripción")}</div></div>
               <div class="card full"><span class="label">Problema reportado</span><div class="value">${escapeHtml(item.reportedIssue || "Sin problema reportado")}</div></div>
               <div class="card"><span class="label">Técnico</span><div class="value">${escapeHtml(item.technicianName || "Sin asignar")}</div></div>
-              <div class="card"><span class="label">Solicitado por</span><div class="value">${escapeHtml(item.requestedBy || "No definido")}</div></div>
+              <div class="card"><span class="label">Número de serie</span><div class="value">${escapeHtml(item.serialNumber || "No definido")}</div></div>
+              <div class="card"><span class="label">Responsable</span><div class="value">${escapeHtml(item.responsibleName || "No definido")}</div></div>
+              <div class="card"><span class="label">Recibido por</span><div class="value">${escapeHtml(item.receivedBy || "No definido")}</div></div>
               <div class="card full">
                 <div class="signature-title">Firma de conformidad</div>
                 ${signatureBlock}
@@ -198,7 +200,9 @@ export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
                 <p><span className="font-medium text-foreground">Descripcion:</span> {item.description || "Sin descripcion"}</p>
                 <p><span className="font-medium text-foreground">Problema:</span> {item.reportedIssue || "Sin problema reportado"}</p>
                 <p><span className="font-medium text-foreground">Tecnico:</span> {item.technicianName || "Sin asignar"}</p>
-                <p><span className="font-medium text-foreground">Solicitado por:</span> {item.requestedBy || "No definido"}</p>
+                <p><span className="font-medium text-foreground">Numero de serie:</span> {item.serialNumber || "No definido"}</p>
+                <p><span className="font-medium text-foreground">Responsable:</span> {item.responsibleName || "No definido"}</p>
+                <p><span className="font-medium text-foreground">Recibido por:</span> {item.receivedBy || "No definido"}</p>
               </div>
               <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2 font-medium text-foreground">
@@ -288,8 +292,18 @@ export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
                   <Input value={editItem.technicianName || ""} onChange={(e) => setEditItem((prev) => prev ? { ...prev, technicianName: e.target.value } : prev)} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Solicitado por</Label>
-                  <Input value={editItem.requestedBy || ""} onChange={(e) => setEditItem((prev) => prev ? { ...prev, requestedBy: e.target.value } : prev)} />
+                  <Label>Numero de serie</Label>
+                  <Input value={editItem.serialNumber || ""} onChange={(e) => setEditItem((prev) => prev ? { ...prev, serialNumber: e.target.value } : prev)} />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Nombre del responsable</Label>
+                  <Input value={editItem.responsibleName || ""} onChange={(e) => setEditItem((prev) => prev ? { ...prev, responsibleName: e.target.value } : prev)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Recibido por</Label>
+                  <Input value={editItem.receivedBy || ""} onChange={(e) => setEditItem((prev) => prev ? { ...prev, receivedBy: e.target.value } : prev)} />
                 </div>
               </div>
               <DialogFooter className="gap-2 sm:gap-0">
@@ -316,8 +330,8 @@ export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
                 <p className="text-muted-foreground">{closeItem.folio} · {closeItem.siteName || `Sede ${closeItem.siteId}`}</p>
               </div>
               <div className="space-y-2">
-                <Label>Quien confirma</Label>
-                <Input value={closingName} onChange={(e) => setClosingName(e.target.value)} placeholder="Nombre de la persona que recibe / confirma" />
+                <Label>Recibido por</Label>
+                <Input value={closingName} onChange={(e) => setClosingName(e.target.value)} placeholder="Nombre de la persona que recibe y firma" />
               </div>
               <div className="space-y-2">
                 <Label>Firma de confirmacion</Label>

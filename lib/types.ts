@@ -103,7 +103,9 @@ export interface Maintenance {
   description?: string
   reportedIssue?: string
   technicianName?: string
-  requestedBy?: string
+  serialNumber?: string
+  responsibleName?: string
+  receivedBy?: string
   signatureData?: string
   createdAt: string
   updatedAt?: string
