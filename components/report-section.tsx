@@ -38,8 +38,10 @@ const statusLabels: Record<string, string> = {
 
 function openPrintableTable(title: string, headers: string[], rows: string[][]) {
   const printableRows = rows
-    .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
-    .join("")
+    .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("
+")}</tr>`)
+    .join("
+")
 
   const html = `
     <html>
@@ -56,7 +58,8 @@ function openPrintableTable(title: string, headers: string[], rows: string[][]) 
       <body>
         <h1>${title}</h1>
         <table>
-          <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+          <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("
+")}</tr></thead>
           <tbody>${printableRows}</tbody>
         </table>
       </body>
@@ -84,8 +87,7 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
       r.tiempoResolucion,
       r.estado,
     ])
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("
-")
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
@@ -105,8 +107,7 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
       `"${(m.requestedBy || "").replace(/"/g, '""')}"`,
       new Date(m.createdAt).toLocaleDateString("es-MX"),
     ])
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("
-")
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
