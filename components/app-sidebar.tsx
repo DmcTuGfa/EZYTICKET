@@ -99,7 +99,7 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
     <>
       <aside
         className={cn(
-          "hidden md:flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 shrink-0",
+          "hidden md:flex md:sticky md:top-0 flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 shrink-0 self-start",
           collapsed ? "w-16" : "w-64"
         )}
       >

@@ -84,7 +84,8 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
       r.tiempoResolucion,
       r.estado,
     ])
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("
+")
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
@@ -104,7 +105,8 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
       `"${(m.requestedBy || "").replace(/"/g, '""')}"`,
       new Date(m.createdAt).toLocaleDateString("es-MX"),
     ])
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("
+")
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
@@ -174,103 +176,101 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="bg-card border-border overflow-hidden">
-          <CardHeader className="gap-3">
-            <div>
-              <CardTitle>Reporte de Tickets</CardTitle>
-              <CardDescription>Exporta y consulta tickets cerrados y resueltos</CardDescription>
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap">
-              <Button variant="outline" onClick={handleExportTicketsCSV} className="w-full gap-2 sm:w-auto">
-                <Download className="h-4 w-4" />
-                <FileSpreadsheet className="h-4 w-4" />
-                CSV
-              </Button>
-              <Button variant="outline" onClick={handleExportTicketsPDF} className="w-full gap-2 sm:w-auto">
-                <FileText className="h-4 w-4" />
-                PDF
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto rounded-md border border-border">
-              <Table className="min-w-[560px] md:min-w-[680px]">
-                <TableHeader>
-                  <TableRow className="bg-secondary/50 hover:bg-secondary/50">
-                    <TableHead>ID</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Titulo</TableHead>
-                    <TableHead>Area</TableHead>
-                    <TableHead>Estado</TableHead>
+      <Card className="bg-card border-border overflow-hidden">
+        <CardHeader className="gap-3">
+          <div>
+            <CardTitle>Reporte de Tickets</CardTitle>
+            <CardDescription>Exporta y consulta tickets cerrados y resueltos</CardDescription>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:w-fit">
+            <Button variant="outline" onClick={handleExportTicketsCSV} className="w-full gap-2">
+              <Download className="h-4 w-4" />
+              <FileSpreadsheet className="h-4 w-4" />
+              CSV
+            </Button>
+            <Button variant="outline" onClick={handleExportTicketsPDF} className="w-full gap-2">
+              <FileText className="h-4 w-4" />
+              PDF
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-md border border-border">
+            <Table className="min-w-[760px]">
+              <TableHeader>
+                <TableRow className="bg-secondary/50 hover:bg-secondary/50">
+                  <TableHead>ID</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Titulo</TableHead>
+                  <TableHead>Area</TableHead>
+                  <TableHead>Estado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {report.slice(0, 10).map((row) => (
+                  <TableRow key={row.id} className="hover:bg-muted/30">
+                    <TableCell className="font-mono text-xs">{row.id}</TableCell>
+                    <TableCell>{row.fecha}</TableCell>
+                    <TableCell className="max-w-[260px] truncate">{row.titulo}</TableCell>
+                    <TableCell>{row.area}</TableCell>
+                    <TableCell>
+                      <Badge className={statusColors[row.estado] || ""}>{statusLabels[row.estado] || row.estado}</Badge>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {report.slice(0, 10).map((row) => (
-                    <TableRow key={row.id} className="hover:bg-muted/30">
-                      <TableCell className="font-mono text-xs">{row.id}</TableCell>
-                      <TableCell>{row.fecha}</TableCell>
-                      <TableCell className="max-w-[220px] truncate">{row.titulo}</TableCell>
-                      <TableCell>{row.area}</TableCell>
-                      <TableCell>
-                        <Badge className={statusColors[row.estado] || ""}>{statusLabels[row.estado] || row.estado}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="bg-card border-border overflow-hidden">
-          <CardHeader className="gap-3">
-            <div>
-              <CardTitle>Reporte de Mantenimientos</CardTitle>
-              <CardDescription>Historial por sede, tipo y estado</CardDescription>
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap">
-              <Button variant="outline" onClick={handleExportMaintenancesCSV} className="w-full gap-2 sm:w-auto">
-                <Download className="h-4 w-4" />
-                <FileSpreadsheet className="h-4 w-4" />
-                CSV
-              </Button>
-              <Button variant="outline" onClick={handleExportMaintenancesPDF} className="w-full gap-2 sm:w-auto">
-                <FileText className="h-4 w-4" />
-                PDF
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto rounded-md border border-border">
-              <Table className="min-w-[560px] md:min-w-[680px]">
-                <TableHeader>
-                  <TableRow className="bg-secondary/50 hover:bg-secondary/50">
-                    <TableHead>Folio</TableHead>
-                    <TableHead>Sede</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Titulo</TableHead>
-                    <TableHead>Estado</TableHead>
+      <Card className="bg-card border-border overflow-hidden">
+        <CardHeader className="gap-3">
+          <div>
+            <CardTitle>Reporte de Mantenimientos</CardTitle>
+            <CardDescription>Historial por sede, tipo y estado</CardDescription>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:w-fit">
+            <Button variant="outline" onClick={handleExportMaintenancesCSV} className="w-full gap-2">
+              <Download className="h-4 w-4" />
+              <FileSpreadsheet className="h-4 w-4" />
+              CSV
+            </Button>
+            <Button variant="outline" onClick={handleExportMaintenancesPDF} className="w-full gap-2">
+              <FileText className="h-4 w-4" />
+              PDF
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded-md border border-border">
+            <Table className="min-w-[760px]">
+              <TableHeader>
+                <TableRow className="bg-secondary/50 hover:bg-secondary/50">
+                  <TableHead>Folio</TableHead>
+                  <TableHead>Sede</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Titulo</TableHead>
+                  <TableHead>Estado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {maintenances.slice(0, 10).map((row) => (
+                  <TableRow key={row.id} className="hover:bg-muted/30">
+                    <TableCell className="font-mono text-xs">{row.folio}</TableCell>
+                    <TableCell>{row.siteName || `Sede ${row.siteId}`}</TableCell>
+                    <TableCell>{row.maintenanceType}</TableCell>
+                    <TableCell className="max-w-[260px] truncate">{row.title}</TableCell>
+                    <TableCell>
+                      <Badge className={statusColors[row.status] || ""}>{statusLabels[row.status] || row.status}</Badge>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {maintenances.slice(0, 10).map((row) => (
-                    <TableRow key={row.id} className="hover:bg-muted/30">
-                      <TableCell className="font-mono text-xs">{row.folio}</TableCell>
-                      <TableCell>{row.siteName || `Sede ${row.siteId}`}</TableCell>
-                      <TableCell>{row.maintenanceType}</TableCell>
-                      <TableCell className="max-w-[220px] truncate">{row.title}</TableCell>
-                      <TableCell>
-                        <Badge className={statusColors[row.status] || ""}>{statusLabels[row.status] || row.status}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

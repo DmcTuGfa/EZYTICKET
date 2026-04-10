@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ClipboardCheck, Wrench, CircleDot, CheckCircle } from "lucide-react"
+import { ClipboardCheck, Wrench, AlertTriangle, CheckCircle } from "lucide-react"
 import type { MaintenanceStats } from "@/lib/types"
 
 interface Props {
@@ -18,18 +18,18 @@ export function MaintenanceStatsCards({ stats }: Props) {
       color: "text-primary",
     },
     {
-      title: "Preventivos",
-      value: stats.byType.preventivo,
-      icon: CircleDot,
-      description: "Trabajo programado",
-      color: "text-chart-2",
+      title: "Abiertos",
+      value: stats.byStatus.abierto,
+      icon: AlertTriangle,
+      description: "Pendientes de atencion",
+      color: "text-warning",
     },
     {
-      title: "Correctivos",
-      value: stats.byType.correctivo,
+      title: "En Progreso",
+      value: stats.byStatus.en_proceso,
       icon: Wrench,
-      description: "Atencion correctiva",
-      color: "text-warning",
+      description: "En proceso de solucion",
+      color: "text-chart-1",
     },
     {
       title: "Cerrados",
@@ -43,7 +43,7 @@ export function MaintenanceStatsCards({ stats }: Props) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
-        <Card key={card.title} className="border-border bg-card shadow-sm">
+        <Card key={card.title} className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
             <card.icon className={`h-4 w-4 ${card.color}`} />

@@ -1,78 +1,135 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import type { MaintenanceStats } from "@/lib/types"
 
 interface Props {
   stats: MaintenanceStats
 }
 
-const tooltipStyle = {
-  backgroundColor: "#1f2124",
-  border: "1px solid #393d42",
-  borderRadius: "12px",
-  color: "#f5f5f5",
+const COLORS = {
+  status: {
+    abierto: "#f59e0b",
+    en_proceso: "#3b82f6",
+    cerrado: "#10b981",
+  },
+  site: ["#3b82f6", "#ef4444", "#f97316", "#10b981", "#8b5cf6"],
+  type: ["#3b82f6", "#10b981"],
+}
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-card border border-border rounded-lg shadow-lg p-3">
+        <p className="font-medium text-foreground mb-1">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {entry.value}
+          </p>
+        ))}
+      </div>
+    )
+  }
+  return null
 }
 
 export function MaintenanceCharts({ stats }: Props) {
   const typeData = [
-    { name: "Preventivo", total: stats.byType.preventivo },
-    { name: "Correctivo", total: stats.byType.correctivo },
+    { name: "Preventivo", value: stats.byType.preventivo },
+    { name: "Correctivo", value: stats.byType.correctivo },
   ]
 
-  const siteData = Object.entries(stats.bySite).map(([name, total]) => ({ name, total }))
+  const siteData = Object.entries(stats.bySite).map(([name, value]) => ({ name, value }))
   const statusData = [
-    { name: "Abierto", total: stats.byStatus.abierto },
-    { name: "En proceso", total: stats.byStatus.en_proceso },
-    { name: "Cerrado", total: stats.byStatus.cerrado },
+    { name: "Abierto", value: stats.byStatus.abierto, fill: COLORS.status.abierto },
+    { name: "En Progreso", value: stats.byStatus.en_proceso, fill: COLORS.status.en_proceso },
+    { name: "Cerrado", value: stats.byStatus.cerrado, fill: COLORS.status.cerrado },
   ]
 
   return (
-    <div className="grid gap-4 xl:grid-cols-3">
-      <Card className="border-border bg-card shadow-sm xl:col-span-2">
-        <CardHeader className="pb-3">
-          <CardTitle>Mantenimientos por sede</CardTitle>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground">Estado de Mantenimientos</CardTitle>
+          <CardDescription>Mantenimientos agrupados por estado</CardDescription>
         </CardHeader>
-        <CardContent className="h-[260px] p-3 sm:h-80 sm:p-6">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={siteData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#a1a1aa" }} interval={0} angle={siteData.length > 3 ? -12 : 0} textAnchor={siteData.length > 3 ? "end" : "middle"} height={siteData.length > 3 ? 48 : 30} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#a1a1aa" }} width={28} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-              <Bar dataKey="total" radius={[10, 10, 0, 0]} fill="#60a5fa" />
-            </BarChart>
-          </ResponsiveContainer>
+        <CardContent>
+          {statusData.some((item) => item.value > 0) ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={statusData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="name" tick={{ fill: "#9ca3af" }} />
+                <YAxis tick={{ fill: "#9ca3af" }} allowDecimals={false} width={30} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {statusData.map((entry, index) => (
+                    <Cell key={index} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[260px] flex items-center justify-center text-muted-foreground">No hay datos</div>
+          )}
         </CardContent>
       </Card>
-      <Card className="border-border bg-card shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle>Tipos</CardTitle>
+
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground">Tipos de Mantenimiento</CardTitle>
+          <CardDescription>Preventivos y correctivos</CardDescription>
         </CardHeader>
-        <CardContent className="h-[260px] p-3 sm:h-80 sm:p-6">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={typeData} dataKey="total" nameKey="name" outerRadius={72} label />
-              <Tooltip contentStyle={tooltipStyle} />
-            </PieChart>
-          </ResponsiveContainer>
+        <CardContent>
+          {typeData.some((item) => item.value > 0) ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={typeData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  paddingAngle={2}
+                  dataKey="value"
+                  label={({ name, percent }) => (percent && percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : "")}
+                  labelLine={false}
+                >
+                  {typeData.map((_, index) => (
+                    <Cell key={index} fill={COLORS.type[index % COLORS.type.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[260px] flex items-center justify-center text-muted-foreground">No hay datos</div>
+          )}
         </CardContent>
       </Card>
-      <Card className="border-border bg-card shadow-sm xl:col-span-3">
-        <CardHeader className="pb-3">
-          <CardTitle>Estado de mantenimientos</CardTitle>
+
+      <Card className="bg-card border-border lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="text-foreground">Mantenimientos por Sede</CardTitle>
+          <CardDescription>Historial agrupado por sede</CardDescription>
         </CardHeader>
-        <CardContent className="h-[240px] p-3 sm:h-72 sm:p-6">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={statusData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#a1a1aa" }} interval={0} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#a1a1aa" }} width={28} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-              <Bar dataKey="total" radius={[10, 10, 0, 0]} fill="#34d399" />
-            </BarChart>
-          </ResponsiveContainer>
+        <CardContent>
+          {siteData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={siteData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="name" tick={{ fill: "#9ca3af" }} interval={0} />
+                <YAxis tick={{ fill: "#9ca3af" }} allowDecimals={false} width={30} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {siteData.map((_, index) => (
+                    <Cell key={index} fill={COLORS.site[index % COLORS.site.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[280px] flex items-center justify-center text-muted-foreground">No hay datos por sede</div>
+          )}
         </CardContent>
       </Card>
     </div>
