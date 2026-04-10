@@ -1,148 +1,124 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
-import { createMaintenance } from "@/lib/db/maintenances"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { SignaturePad } from "@/components/signature-pad"
-import type { Site } from "@/lib/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { createMaintenance } from "@/lib/db/maintenances"
+import type { MaintenanceStatus, MaintenanceType, Site } from "@/lib/types"
 
-interface Props {
+interface MaintenanceFormProps {
   sites: Site[]
-  currentUser?: string | null
   onCreated?: () => void
 }
 
-export function MaintenanceForm({ sites, currentUser, onCreated }: Props) {
+export function MaintenanceForm({ sites, onCreated }: MaintenanceFormProps) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [pending, startTransition] = useTransition()
-  const [signatureData, setSignatureData] = useState("")
-  const [form, setForm] = useState({
-    maintenanceType: "preventivo",
-    siteId: sites[0]?.id ? String(sites[0].id) : "",
+  const [submitting, setSubmitting] = useState(false)
+  const [formData, setFormData] = useState({
+    maintenanceType: "preventivo" as MaintenanceType,
+    status: "abierto" as MaintenanceStatus,
+    siteId: sites[0]?.id ?? 1,
     title: "",
     description: "",
     reportedIssue: "",
-    workPerformed: "",
-    recommendations: "",
-    scheduledDate: new Date().toISOString().split("T")[0],
-    technicianName: currentUser || "",
-    requestedByName: "",
-    confirmedByName: "",
-    confirmedByPosition: "",
+    technicianName: "",
+    requestedBy: "",
   })
 
-  const isMobile = useMemo(() => typeof window !== "undefined" && window.innerWidth <= 768, [])
-
-  function submit() {
-    startTransition(async () => {
-      await createMaintenance({
-        maintenanceType: form.maintenanceType as "preventivo" | "correctivo",
-        siteId: Number(form.siteId),
-        title: form.title,
-        description: form.description || undefined,
-        reportedIssue: form.reportedIssue || undefined,
-        workPerformed: form.workPerformed || undefined,
-        recommendations: form.recommendations || undefined,
-        scheduledDate: form.scheduledDate || undefined,
-        technicianName: form.technicianName || undefined,
-        requestedByName: form.requestedByName || undefined,
-        confirmedByName: form.confirmedByName || undefined,
-        confirmedByPosition: form.confirmedByPosition || undefined,
-        signatureData: signatureData || undefined,
-        createdBy: currentUser || undefined,
-      })
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      await createMaintenance(formData)
       setOpen(false)
+      setFormData({
+        maintenanceType: "preventivo",
+        status: "abierto",
+        siteId: sites[0]?.id ?? 1,
+        title: "",
+        description: "",
+        reportedIssue: "",
+        technicianName: "",
+        requestedBy: "",
+      })
       onCreated?.()
-    })
+      router.refresh()
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Nuevo mantenimiento</Button>
+        <Button className="gap-2">
+          <Plus className="h-4 w-4" />
+          Nuevo Mantenimiento
+        </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Mantenimiento preventivo / correctivo</DialogTitle>
+          <DialogTitle>Nuevo mantenimiento</DialogTitle>
+          <DialogDescription>Registra un mantenimiento preventivo o correctivo.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Tipo</Label>
-            <Select value={form.maintenanceType} onValueChange={(value) => setForm({ ...form, maintenanceType: value })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="preventivo">Preventivo</SelectItem>
-                <SelectItem value="correctivo">Correctivo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Sede</Label>
-            <Select value={form.siteId} onValueChange={(value) => setForm({ ...form, siteId: value })}>
-              <SelectTrigger><SelectValue placeholder="Selecciona sede" /></SelectTrigger>
-              <SelectContent>
-                {sites.map((site) => <SelectItem key={site.id} value={String(site.id)}>{site.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Título</Label>
-            <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ej. Mantenimiento preventivo impresora recepción" />
-          </div>
-          <div className="space-y-2">
-            <Label>Fecha programada</Label>
-            <Input type="date" value={form.scheduledDate} onChange={(e) => setForm({ ...form, scheduledDate: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Técnico</Label>
-            <Input value={form.technicianName} onChange={(e) => setForm({ ...form, technicianName: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Solicitado por</Label>
-            <Input value={form.requestedByName} onChange={(e) => setForm({ ...form, requestedByName: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Confirma</Label>
-            <Input value={form.confirmedByName} onChange={(e) => setForm({ ...form, confirmedByName: e.target.value })} />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Puesto de quien confirma</Label>
-            <Input value={form.confirmedByPosition} onChange={(e) => setForm({ ...form, confirmedByPosition: e.target.value })} />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Descripción</Label>
-            <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Problema reportado</Label>
-            <Textarea value={form.reportedIssue} onChange={(e) => setForm({ ...form, reportedIssue: e.target.value })} rows={3} />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Trabajo realizado</Label>
-            <Textarea value={form.workPerformed} onChange={(e) => setForm({ ...form, workPerformed: e.target.value })} rows={4} />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Recomendaciones</Label>
-            <Textarea value={form.recommendations} onChange={(e) => setForm({ ...form, recommendations: e.target.value })} rows={3} />
-          </div>
-          {isMobile && (
-            <div className="space-y-2 md:col-span-2">
-              <Label>Firma de conformidad</Label>
-              <SignaturePad onChange={setSignatureData} />
+        <form onSubmit={submit} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select value={formData.maintenanceType} onValueChange={(value: MaintenanceType) => setFormData((prev) => ({ ...prev, maintenanceType: value }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="preventivo">Preventivo</SelectItem>
+                  <SelectItem value="correctivo">Correctivo</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={pending || !form.title || !form.siteId}>
-            {pending ? "Guardando..." : "Guardar mantenimiento"}
-          </Button>
-        </div>
+            <div className="space-y-2">
+              <Label>Sede</Label>
+              <Select value={String(formData.siteId)} onValueChange={(value) => setFormData((prev) => ({ ...prev, siteId: Number(value) }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {sites.map((site) => (
+                    <SelectItem key={site.id} value={String(site.id)}>{site.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Titulo</Label>
+            <Input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} required />
+          </div>
+          <div className="space-y-2">
+            <Label>Descripcion</Label>
+            <Textarea value={formData.description} onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))} rows={3} />
+          </div>
+          <div className="space-y-2">
+            <Label>Problema reportado</Label>
+            <Textarea value={formData.reportedIssue} onChange={(e) => setFormData((prev) => ({ ...prev, reportedIssue: e.target.value }))} rows={3} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Tecnico</Label>
+              <Input value={formData.technicianName} onChange={(e) => setFormData((prev) => ({ ...prev, technicianName: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Solicitado por</Label>
+              <Input value={formData.requestedBy} onChange={(e) => setFormData((prev) => ({ ...prev, requestedBy: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button type="submit" disabled={submitting}>{submitting ? "Guardando..." : "Guardar mantenimiento"}</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

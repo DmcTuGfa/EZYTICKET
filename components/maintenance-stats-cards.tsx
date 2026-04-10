@@ -1,28 +1,23 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Maintenance } from "@/lib/types"
-import { ClipboardCheck, ShieldAlert, Wrench, CheckCircle } from "lucide-react"
+import { ClipboardCheck, Wrench, CircleDot, CheckCircle } from "lucide-react"
+import type { MaintenanceStats } from "@/lib/types"
 
 interface Props {
-  maintenances: Maintenance[]
+  stats: MaintenanceStats
 }
 
-export function MaintenanceStatsCards({ maintenances }: Props) {
-  const total = maintenances.length
-  const preventivos = maintenances.filter((m) => m.maintenanceType === "preventivo").length
-  const correctivos = maintenances.filter((m) => m.maintenanceType === "correctivo").length
-  const cerrados = maintenances.filter((m) => m.status === "cerrado").length
-
+export function MaintenanceStatsCards({ stats }: Props) {
   const cards = [
-    { title: "Total", value: total, description: "Mantenimientos registrados", icon: ClipboardCheck, color: "text-primary" },
-    { title: "Preventivos", value: preventivos, description: "Programados y de rutina", icon: Wrench, color: "text-chart-1" },
-    { title: "Correctivos", value: correctivos, description: "Atención por falla", icon: ShieldAlert, color: "text-warning" },
-    { title: "Cerrados", value: cerrados, description: "Finalizados", icon: CheckCircle, color: "text-success" },
+    { title: "Total", value: stats.total, icon: ClipboardCheck, color: "text-primary", description: "Mantenimientos registrados" },
+    { title: "Preventivos", value: stats.byType.preventivo, icon: CircleDot, color: "text-chart-2", description: "Programados y preventivos" },
+    { title: "Correctivos", value: stats.byType.correctivo, icon: Wrench, color: "text-warning", description: "Atencion correctiva" },
+    { title: "Cerrados", value: stats.byStatus.cerrado, icon: CheckCircle, color: "text-success", description: "Con firma de cierre" },
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => (
         <Card key={card.title} className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -31,7 +26,7 @@ export function MaintenanceStatsCards({ maintenances }: Props) {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${card.color}`}>{card.value}</div>
-            <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{card.description}</p>
           </CardContent>
         </Card>
       ))}

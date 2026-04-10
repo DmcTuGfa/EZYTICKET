@@ -4,76 +4,89 @@ import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 
 interface SignaturePadProps {
+  value?: string
   onChange: (value: string) => void
 }
 
-export function SignaturePad({ onChange }: SignaturePadProps) {
+export function SignaturePad({ value, onChange }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const drawingRef = useRef(false)
-  const [hasSignature, setHasSignature] = useState(false)
-
-  function setupCanvas() {
-    const canvas = canvasRef.current
-    if (!canvas) return null
-    const ratio = Math.max(window.devicePixelRatio || 1, 1)
-    const width = canvas.offsetWidth || 320
-    const height = 160
-    canvas.width = width * ratio
-    canvas.height = height * ratio
-    canvas.style.height = `${height}px`
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return null
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
-    ctx.fillStyle = "#020617"
-    ctx.fillRect(0, 0, width, height)
-    ctx.strokeStyle = "#ffffff"
-    ctx.lineWidth = 2
-    ctx.lineCap = "round"
-    ctx.lineJoin = "round"
-    return { canvas, ctx }
-  }
+  const drawing = useRef(false)
+  const [hasSignature, setHasSignature] = useState(Boolean(value))
 
   useEffect(() => {
-    setupCanvas()
-  }, [])
-
-  function getPoint(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current
-    if (!canvas) return { x: 0, y: 0 }
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    const ratio = window.devicePixelRatio || 1
+    const width = canvas.offsetWidth || 500
+    const height = canvas.offsetHeight || 180
+    canvas.width = width * ratio
+    canvas.height = height * ratio
+    ctx.scale(ratio, ratio)
+    ctx.lineWidth = 2
+    ctx.lineCap = "round"
+    ctx.strokeStyle = "#111827"
+
+    if (value) {
+      const img = new Image()
+      img.onload = () => {
+        ctx.clearRect(0, 0, width, height)
+        ctx.drawImage(img, 0, 0, width, height)
+      }
+      img.src = value
+    }
+  }, [value])
+
+  const getPoint = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current!
     const rect = canvas.getBoundingClientRect()
+    if ("touches" in event) {
+      const touch = event.touches[0] || event.changedTouches[0]
+      return { x: touch.clientX - rect.left, y: touch.clientY - rect.top }
+    }
     return { x: event.clientX - rect.left, y: event.clientY - rect.top }
   }
 
-  function startDrawing(event: React.PointerEvent<HTMLCanvasElement>) {
-    const configured = setupCanvas()
-    const ctx = configured?.ctx
+  const start = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
     if (!ctx) return
-    drawingRef.current = true
     const point = getPoint(event)
+    drawing.current = true
     ctx.beginPath()
     ctx.moveTo(point.x, point.y)
   }
 
-  function draw(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (!drawingRef.current) return
-    const ctx = canvasRef.current?.getContext("2d")
+  const move = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!drawing.current) return
     const canvas = canvasRef.current
-    if (!ctx || !canvas) return
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
     const point = getPoint(event)
     ctx.lineTo(point.x, point.y)
     ctx.stroke()
-    if (!hasSignature) setHasSignature(true)
-    onChange(canvas.toDataURL("image/png"))
+    setHasSignature(true)
   }
 
-  function stopDrawing() {
-    drawingRef.current = false
+  const finish = () => {
+    if (!drawing.current) return
+    drawing.current = false
     const canvas = canvasRef.current
-    if (canvas && hasSignature) onChange(canvas.toDataURL("image/png"))
+    if (!canvas) return
+    const dataUrl = canvas.toDataURL("image/png")
+    onChange(dataUrl)
   }
 
-  function clearCanvas() {
-    setupCanvas()
+  const clear = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
     setHasSignature(false)
     onChange("")
   }
@@ -82,16 +95,24 @@ export function SignaturePad({ onChange }: SignaturePadProps) {
     <div className="space-y-2">
       <canvas
         ref={canvasRef}
-        className="w-full rounded-md border border-border bg-slate-950 touch-none"
-        onPointerDown={startDrawing}
-        onPointerMove={draw}
-        onPointerUp={stopDrawing}
-        onPointerLeave={stopDrawing}
+        className="h-40 w-full rounded-md border border-border bg-white touch-none"
+        onMouseDown={start}
+        onMouseMove={move}
+        onMouseUp={finish}
+        onMouseLeave={finish}
+        onTouchStart={start}
+        onTouchMove={move}
+        onTouchEnd={finish}
       />
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>Firma de conformidad</span>
-        <Button type="button" variant="outline" size="sm" onClick={clearCanvas}>Limpiar</Button>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Firma aqui antes de cerrar el mantenimiento.
+        </p>
+        <Button type="button" variant="outline" onClick={clear}>
+          Limpiar
+        </Button>
       </div>
+      {!hasSignature && <p className="text-xs text-destructive">La firma es obligatoria para cerrar.</p>}
     </div>
   )
 }

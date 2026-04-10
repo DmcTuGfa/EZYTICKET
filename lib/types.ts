@@ -1,9 +1,33 @@
-export type TicketStatus = "abierto" | "en-progreso" | "en-espera-usuario" | "en-espera-area" | "en-espera-proveedor" | "resuelto" | "cerrado"
+// Tickets
+export type TicketStatus = 
+  | "abierto" 
+  | "en-progreso" 
+  | "en-espera-usuario" 
+  | "en-espera-area" 
+  | "en-espera-proveedor" 
+  | "resuelto" 
+  | "cerrado"
+
 export type TicketPriority = "baja" | "media" | "alta" | "urgente"
 export type TicketCategory = "soporte" | "bug" | "mejora" | "consulta" | "otro"
 export type ClasificacionFinal = "tecnica" | "operativa" | "solicitud" | "proyecto"
-export type CausaRaiz = "falla-tecnica" | "error-captura" | "uso-incorrecto" | "falta-informacion" | "otro"
-export type AreaResponsable = "TI" | "RH" | "Ventas" | "Produccion" | "Finanzas" | "Compras" | "Calidad" | "Logistica" | "Otro"
+export type CausaRaiz = 
+  | "falla-tecnica" 
+  | "error-captura" 
+  | "uso-incorrecto" 
+  | "falta-informacion" 
+  | "proveedor-externo"
+
+export type AreaResponsable = 
+  | "TI" 
+  | "RH" 
+  | "Ventas" 
+  | "Produccion" 
+  | "Finanzas" 
+  | "Compras" 
+  | "Calidad" 
+  | "Logistica"
+  | "Otro"
 
 export interface Ticket {
   id: string
@@ -57,16 +81,15 @@ export interface TicketReportRow {
   estado: string
 }
 
+// Mantenimientos
 export type MaintenanceType = "preventivo" | "correctivo"
-export type MaintenanceStatus = "abierto" | "en_proceso" | "pendiente_confirmacion" | "cerrado" | "cancelado"
+export type MaintenanceStatus = "abierto" | "en_proceso" | "cerrado"
 
 export interface Site {
   id: number
-  code: string
   name: string
-  address?: string
   description?: string
-  active: boolean
+  active?: boolean
 }
 
 export interface Maintenance {
@@ -79,18 +102,24 @@ export interface Maintenance {
   title: string
   description?: string
   reportedIssue?: string
-  workPerformed?: string
-  recommendations?: string
-  scheduledDate?: string
-  openedAt: string
-  completedAt?: string
   technicianName?: string
-  requestedByName?: string
-  confirmedByName?: string
-  confirmedByPosition?: string
+  requestedBy?: string
   signatureData?: string
-  mobileOnly: boolean
-  createdBy?: string
   createdAt: string
-  updatedAt: string
+  updatedAt?: string
+}
+
+export interface MaintenanceLog {
+  id: number
+  maintenanceId: number
+  action: string
+  comment?: string
+  createdAt: string
+}
+
+export interface MaintenanceStats {
+  total: number
+  byStatus: Record<MaintenanceStatus, number>
+  byType: Record<MaintenanceType, number>
+  bySite: Record<string, number>
 }
