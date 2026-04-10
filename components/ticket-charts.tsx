@@ -82,7 +82,7 @@ export function TicketCharts({ stats }: TicketChartsProps) {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-4 xl:grid-cols-2">
       {/* Pie Chart - Estado */}
       <Card className="bg-card border-border">
         <CardHeader>
@@ -90,7 +90,7 @@ export function TicketCharts({ stats }: TicketChartsProps) {
           <CardDescription>Distribucion de tickets por estado actual</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={230}>
             <PieChart>
               <Pie
                 data={statusData}
@@ -120,7 +120,7 @@ export function TicketCharts({ stats }: TicketChartsProps) {
           <CardDescription>Distribucion de tickets por nivel de urgencia</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={230}>
             <PieChart>
               <Pie
                 data={priorityData}
@@ -151,7 +151,7 @@ export function TicketCharts({ stats }: TicketChartsProps) {
         </CardHeader>
         <CardContent>
           {clasificacionData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={230}>
               <PieChart>
                 <Pie
                   data={clasificacionData}
@@ -187,7 +187,7 @@ export function TicketCharts({ stats }: TicketChartsProps) {
         </CardHeader>
         <CardContent>
           {areaData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={240}>
               <BarChart data={areaData} layout="vertical">
                 <XAxis type="number" tick={{ fill: "#9ca3af" }} />
                 <YAxis 

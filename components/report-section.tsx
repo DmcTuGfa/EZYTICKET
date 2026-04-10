@@ -82,7 +82,7 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="bg-card border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Tickets Totales</CardTitle>
@@ -123,20 +123,20 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card className="bg-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <CardTitle>Reporte de Tickets</CardTitle>
               <CardDescription>Exporta y consulta tickets cerrados y resueltos</CardDescription>
             </div>
-            <Button variant="outline" onClick={handleExportTicketsCSV} className="gap-2">
+            <Button variant="outline" onClick={handleExportTicketsCSV} className="w-full gap-2 sm:w-auto">
               <Download className="h-4 w-4" />
               <FileSpreadsheet className="h-4 w-4" />
               CSV
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border border-border overflow-hidden">
-              <Table>
+            <div className="overflow-x-auto rounded-md border border-border">
+              <Table className="min-w-[680px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
@@ -165,20 +165,20 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
         </Card>
 
         <Card className="bg-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <CardTitle>Reporte de Mantenimientos</CardTitle>
               <CardDescription>Historial por sede, tipo y estado</CardDescription>
             </div>
-            <Button variant="outline" onClick={handleExportMaintenancesCSV} className="gap-2">
+            <Button variant="outline" onClick={handleExportMaintenancesCSV} className="w-full gap-2 sm:w-auto">
               <Download className="h-4 w-4" />
               <FileSpreadsheet className="h-4 w-4" />
               CSV
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border border-border overflow-hidden">
-              <Table>
+            <div className="overflow-x-auto rounded-md border border-border">
+              <Table className="min-w-[680px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Folio</TableHead>
