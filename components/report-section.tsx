@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Download, FileSpreadsheet } from "lucide-react"
+import { Download, FileSpreadsheet, FileText } from "lucide-react"
 import type { Maintenance, MaintenanceStats, TicketReportRow, TicketStats } from "@/lib/types"
 
 interface ReportSectionProps {
@@ -36,6 +36,41 @@ const statusLabels: Record<string, string> = {
   en_proceso: "En proceso",
 }
 
+function openPrintableTable(title: string, headers: string[], rows: string[][]) {
+  const printableRows = rows
+    .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
+    .join("")
+
+  const html = `
+    <html>
+      <head>
+        <title>${title}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 24px; }
+          h1 { font-size: 20px; margin-bottom: 16px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; text-align: left; vertical-align: top; }
+          th { background: #f3f4f6; }
+        </style>
+      </head>
+      <body>
+        <h1>${title}</h1>
+        <table>
+          <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+          <tbody>${printableRows}</tbody>
+        </table>
+      </body>
+    </html>
+  `
+
+  const printWindow = window.open("", "_blank", "width=1000,height=800")
+  if (!printWindow) return
+  printWindow.document.write(html)
+  printWindow.document.close()
+  printWindow.focus()
+  printWindow.print()
+}
+
 export function ReportSection({ stats, report, maintenances, maintenanceStats }: ReportSectionProps) {
   const handleExportTicketsCSV = () => {
     const headers = ["ID", "Fecha", "Titulo", "Area", "Tipo", "Causa", "Tiempo Resolucion", "Estado"]
@@ -49,7 +84,8 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
       r.tiempoResolucion,
       r.estado,
     ])
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("
+")
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
@@ -69,12 +105,31 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
       `"${(m.requestedBy || "").replace(/"/g, '""')}"`,
       new Date(m.createdAt).toLocaleDateString("es-MX"),
     ])
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("
+")
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
     link.download = `reporte-mantenimientos-${new Date().toISOString().split("T")[0]}.csv`
     link.click()
+  }
+
+  const handleExportTicketsPDF = () => {
+    const headers = ["ID", "Fecha", "Titulo", "Area", "Estado"]
+    const rows = report.slice(0, 50).map((r) => [r.id, r.fecha, r.titulo, r.area, statusLabels[r.estado] || r.estado])
+    openPrintableTable("Reporte de Tickets", headers, rows)
+  }
+
+  const handleExportMaintenancesPDF = () => {
+    const headers = ["Folio", "Sede", "Tipo", "Titulo", "Estado"]
+    const rows = maintenances.slice(0, 50).map((m) => [
+      m.folio,
+      m.siteName || `Sede ${m.siteId}`,
+      m.maintenanceType,
+      m.title || "",
+      statusLabels[m.status] || m.status,
+    ])
+    openPrintableTable("Reporte de Mantenimientos", headers, rows)
   }
 
   const closedTickets = stats.byStatus.resuelto + stats.byStatus.cerrado
@@ -122,23 +177,29 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="bg-card border-border">
-          <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+        <Card className="bg-card border-border overflow-hidden">
+          <CardHeader className="gap-3">
             <div>
               <CardTitle>Reporte de Tickets</CardTitle>
               <CardDescription>Exporta y consulta tickets cerrados y resueltos</CardDescription>
             </div>
-            <Button variant="outline" onClick={handleExportTicketsCSV} className="w-full gap-2 sm:w-auto">
-              <Download className="h-4 w-4" />
-              <FileSpreadsheet className="h-4 w-4" />
-              CSV
-            </Button>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap">
+              <Button variant="outline" onClick={handleExportTicketsCSV} className="w-full gap-2 sm:w-auto">
+                <Download className="h-4 w-4" />
+                <FileSpreadsheet className="h-4 w-4" />
+                CSV
+              </Button>
+              <Button variant="outline" onClick={handleExportTicketsPDF} className="w-full gap-2 sm:w-auto">
+                <FileText className="h-4 w-4" />
+                PDF
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto rounded-md border border-border">
-              <Table className="min-w-[680px]">
+              <Table className="min-w-[560px] md:min-w-[680px]">
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-secondary/50 hover:bg-secondary/50">
                     <TableHead>ID</TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead>Titulo</TableHead>
@@ -148,7 +209,7 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
                 </TableHeader>
                 <TableBody>
                   {report.slice(0, 10).map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} className="hover:bg-muted/30">
                       <TableCell className="font-mono text-xs">{row.id}</TableCell>
                       <TableCell>{row.fecha}</TableCell>
                       <TableCell className="max-w-[220px] truncate">{row.titulo}</TableCell>
@@ -164,23 +225,29 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border">
-          <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+        <Card className="bg-card border-border overflow-hidden">
+          <CardHeader className="gap-3">
             <div>
               <CardTitle>Reporte de Mantenimientos</CardTitle>
               <CardDescription>Historial por sede, tipo y estado</CardDescription>
             </div>
-            <Button variant="outline" onClick={handleExportMaintenancesCSV} className="w-full gap-2 sm:w-auto">
-              <Download className="h-4 w-4" />
-              <FileSpreadsheet className="h-4 w-4" />
-              CSV
-            </Button>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap">
+              <Button variant="outline" onClick={handleExportMaintenancesCSV} className="w-full gap-2 sm:w-auto">
+                <Download className="h-4 w-4" />
+                <FileSpreadsheet className="h-4 w-4" />
+                CSV
+              </Button>
+              <Button variant="outline" onClick={handleExportMaintenancesPDF} className="w-full gap-2 sm:w-auto">
+                <FileText className="h-4 w-4" />
+                PDF
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto rounded-md border border-border">
-              <Table className="min-w-[680px]">
+              <Table className="min-w-[560px] md:min-w-[680px]">
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-secondary/50 hover:bg-secondary/50">
                     <TableHead>Folio</TableHead>
                     <TableHead>Sede</TableHead>
                     <TableHead>Tipo</TableHead>
@@ -190,7 +257,7 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
                 </TableHeader>
                 <TableBody>
                   {maintenances.slice(0, 10).map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} className="hover:bg-muted/30">
                       <TableCell className="font-mono text-xs">{row.folio}</TableCell>
                       <TableCell>{row.siteName || `Sede ${row.siteId}`}</TableCell>
                       <TableCell>{row.maintenanceType}</TableCell>

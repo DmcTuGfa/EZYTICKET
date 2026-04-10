@@ -82,46 +82,37 @@ export function HomeClient({ tickets, stats, report, maintenances, maintenanceSt
                   <h3 className="text-base font-semibold text-foreground md:text-lg">Tickets Recientes</h3>
                   <div className="space-y-3">
                     {tickets.slice(0, 5).map((ticket) => (
-                      <div
-                        key={ticket.id}
-                        className="rounded-lg border border-border bg-card p-4 transition-colors hover:bg-card/80"
-                      >
+                      <div key={ticket.id} className="rounded-lg border border-border bg-card p-4 transition-colors hover:bg-card/80">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-mono text-sm text-primary break-all">{ticket.id}</span>
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                  ticket.priority === "urgente"
-                                    ? "bg-destructive/20 text-destructive"
-                                    : ticket.priority === "alta"
-                                      ? "bg-warning/20 text-warning"
-                                      : ticket.priority === "media"
-                                        ? "bg-chart-1/20 text-chart-1"
-                                        : "bg-success/20 text-success"
-                                }`}
-                              >
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                ticket.priority === "urgente"
+                                  ? "bg-destructive/20 text-destructive"
+                                  : ticket.priority === "alta"
+                                    ? "bg-warning/20 text-warning"
+                                    : ticket.priority === "media"
+                                      ? "bg-chart-1/20 text-chart-1"
+                                      : "bg-success/20 text-success"
+                              }`}>
                                 {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
                               </span>
-                              {ticket.areaResponsable && (
-                                <span className="text-xs text-muted-foreground">{ticket.areaResponsable}</span>
-                              )}
+                              {ticket.areaResponsable && <span className="text-xs text-muted-foreground">{ticket.areaResponsable}</span>}
                             </div>
                             <p className="mt-1 text-sm text-foreground break-words">{ticket.title}</p>
                           </div>
-                          <span
-                            className={`inline-flex items-center self-start px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                              ticket.status === "abierto"
-                                ? "bg-warning/20 text-warning"
-                                : ticket.status === "en-progreso"
-                                  ? "bg-chart-1/20 text-chart-1"
-                                  : ticket.status === "resuelto" || ticket.status === "cerrado"
-                                    ? "bg-success/20 text-success"
-                                    : ticket.status.includes("espera")
-                                      ? "bg-chart-5/20 text-chart-5"
-                                      : "bg-muted text-muted-foreground"
-                            }`}
-                          >
+                          <span className={`inline-flex items-center self-start px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
+                            ticket.status === "abierto"
+                              ? "bg-warning/20 text-warning"
+                              : ticket.status === "en-progreso"
+                                ? "bg-chart-1/20 text-chart-1"
+                                : ticket.status === "resuelto" || ticket.status === "cerrado"
+                                  ? "bg-success/20 text-success"
+                                  : ticket.status.includes("espera")
+                                    ? "bg-chart-5/20 text-chart-5"
+                                    : "bg-muted text-muted-foreground"
+                          }`}>
                             {statusLabels[ticket.status] || ticket.status}
                           </span>
                         </div>
@@ -134,22 +125,25 @@ export function HomeClient({ tickets, stats, report, maintenances, maintenanceSt
                   <h3 className="text-base font-semibold text-foreground md:text-lg">Mantenimientos Recientes</h3>
                   <div className="space-y-3">
                     {maintenances.slice(0, 5).map((item) => (
-                      <div
-                        key={item.id}
-                        className="rounded-lg border border-border bg-card p-4 transition-colors hover:bg-card/80"
-                      >
+                      <div key={item.id} className="rounded-lg border border-border bg-card p-4 transition-colors hover:bg-card/80">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-mono text-sm text-primary break-all">{item.folio}</span>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item.maintenanceType === "correctivo" ? "bg-warning/20 text-warning" : "bg-chart-2/20 text-chart-2"}`}>
                                 {item.maintenanceType}
                               </span>
                               <span className="text-xs text-muted-foreground">{item.siteName || `Sede ${item.siteId}`}</span>
                             </div>
                             <p className="mt-1 text-sm text-foreground break-words">{item.title}</p>
                           </div>
-                          <span className="inline-flex items-center self-start px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap bg-muted text-muted-foreground">
+                          <span className={`inline-flex items-center self-start px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
+                            item.status === "abierto"
+                              ? "bg-warning/20 text-warning"
+                              : item.status === "en_proceso"
+                                ? "bg-chart-1/20 text-chart-1"
+                                : "bg-success/20 text-success"
+                          }`}>
                             {item.status === "en_proceso" ? "En proceso" : item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                           </span>
                         </div>
@@ -164,12 +158,7 @@ export function HomeClient({ tickets, stats, report, maintenances, maintenanceSt
           {currentView === "tickets" && <TicketList tickets={tickets} onUpdate={refresh} />}
           {currentView === "maintenances" && <MaintenanceList maintenances={maintenances} sites={sites} onUpdate={refresh} />}
           {currentView === "reports" && (
-            <ReportSection
-              stats={stats}
-              report={report}
-              maintenances={maintenances}
-              maintenanceStats={maintenanceStats}
-            />
+            <ReportSection stats={stats} report={report} maintenances={maintenances} maintenanceStats={maintenanceStats} />
           )}
         </div>
       </main>

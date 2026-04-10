@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 import { SignaturePad } from "@/components/signature-pad"
 import { closeMaintenance, updateMaintenance } from "@/lib/db/maintenances"
 import type { Maintenance, MaintenanceStatus, MaintenanceType, Site } from "@/lib/types"
@@ -18,6 +19,17 @@ interface Props {
   maintenances: Maintenance[]
   sites: Site[]
   onUpdate?: () => void
+}
+
+const statusColors: Record<MaintenanceStatus, string> = {
+  abierto: "bg-warning/20 text-warning border-warning/30",
+  en_proceso: "bg-chart-1/20 text-chart-1 border-chart-1/30",
+  cerrado: "bg-success/20 text-success border-success/30",
+}
+
+const typeColors: Record<MaintenanceType, string> = {
+  preventivo: "bg-chart-2/20 text-chart-2 border-chart-2/30",
+  correctivo: "bg-warning/20 text-warning border-warning/30",
 }
 
 export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
@@ -87,23 +99,23 @@ export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
 
       <div className="grid gap-4 xl:grid-cols-2">
         {filtered.map((item) => (
-          <Card key={item.id} className="bg-card border-border">
-            <CardHeader className="flex flex-row items-start justify-between gap-3 pb-3">
-              <div>
-                <CardTitle className="text-base">{item.title}</CardTitle>
-                <p className="text-sm text-muted-foreground">{item.folio} · {item.siteName || `Sede ${item.siteId}`}</p>
+          <Card key={item.id} className="bg-card border-border shadow-sm">
+            <CardHeader className="flex flex-col gap-3 pb-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <CardTitle className="text-base break-words">{item.title}</CardTitle>
+                <p className="text-sm text-muted-foreground break-all">{item.folio} · {item.siteName || `Sede ${item.siteId}`}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">{item.maintenanceType}</span>
-                <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">{statusLabel[item.status]}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={typeColors[item.maintenanceType]}>{item.maintenanceType}</Badge>
+                <Badge className={statusColors[item.status]}>{statusLabel[item.status]}</Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-1 text-sm">
-                <p><span className="font-medium">Descripcion:</span> {item.description || "Sin descripcion"}</p>
-                <p><span className="font-medium">Problema:</span> {item.reportedIssue || "Sin problema reportado"}</p>
-                <p><span className="font-medium">Tecnico:</span> {item.technicianName || "Sin asignar"}</p>
-                <p><span className="font-medium">Solicitado por:</span> {item.requestedBy || "No definido"}</p>
+                <p><span className="font-medium text-foreground">Descripcion:</span> {item.description || "Sin descripcion"}</p>
+                <p><span className="font-medium text-foreground">Problema:</span> {item.reportedIssue || "Sin problema reportado"}</p>
+                <p><span className="font-medium text-foreground">Tecnico:</span> {item.technicianName || "Sin asignar"}</p>
+                <p><span className="font-medium text-foreground">Solicitado por:</span> {item.requestedBy || "No definido"}</p>
               </div>
               <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2 font-medium text-foreground">
@@ -112,13 +124,13 @@ export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
                 </div>
                 <p className="mt-1">Usa el boton <span className="font-semibold">Finalizar y pedir firma</span>. Se abrira una ventana donde aparece el area para firmar con el dedo.</p>
               </div>
-              <div className="flex flex-wrap gap-2 pt-2">
-                <Button variant="outline" className="gap-2" onClick={() => setEditItem({ ...item })}>
+              <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:flex-wrap">
+                <Button variant="outline" className="gap-2 w-full sm:w-auto" onClick={() => setEditItem({ ...item })}>
                   <Pencil className="h-4 w-4" />
                   Editar
                 </Button>
                 {item.status !== "cerrado" && (
-                  <Button className="gap-2" onClick={() => setCloseItem(item)}>
+                  <Button className="gap-2 w-full sm:w-auto" onClick={() => setCloseItem(item)}>
                     <ShieldCheck className="h-4 w-4" />
                     Finalizar y pedir firma
                   </Button>
@@ -130,7 +142,7 @@ export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
       </div>
 
       <Dialog open={Boolean(editItem)} onOpenChange={(open) => !open && setEditItem(null)}>
-        <DialogContent className="sm:max-w-[650px] bg-card border-border max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-1rem)] max-w-[650px] bg-card border-border max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Editar mantenimiento</DialogTitle>
             <DialogDescription>Actualiza los datos del mantenimiento seleccionado.</DialogDescription>
@@ -193,7 +205,7 @@ export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
                   <Input value={editItem.requestedBy || ""} onChange={(e) => setEditItem((prev) => prev ? { ...prev, requestedBy: e.target.value } : prev)} />
                 </div>
               </div>
-              <DialogFooter>
+              <DialogFooter className="gap-2 sm:gap-0">
                 <Button variant="outline" onClick={() => setEditItem(null)}>Cancelar</Button>
                 <Button onClick={handleEdit} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</Button>
               </DialogFooter>
