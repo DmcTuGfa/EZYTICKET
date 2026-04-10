@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Pencil, ShieldCheck, Smartphone } from "lucide-react"
+import { FileText, Pencil, ShieldCheck, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -30,6 +30,21 @@ const statusColors: Record<MaintenanceStatus, string> = {
 const typeColors: Record<MaintenanceType, string> = {
   preventivo: "bg-chart-2/20 text-chart-2 border-chart-2/30",
   correctivo: "bg-warning/20 text-warning border-warning/30",
+}
+
+
+function formatDate(value?: string) {
+  if (!value) return "-"
+  return new Date(value).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })
+}
+
+function escapeHtml(value?: string) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
 }
 
 export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
@@ -79,6 +94,74 @@ export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
     cerrado: "Cerrado",
   }
 
+  const handleDownloadPDF = (item: Maintenance) => {
+    const printWindow = window.open("", "_blank", "width=900,height=1200")
+    if (!printWindow) return
+
+    const siteName = item.siteName || `Sede ${item.siteId}`
+    const status = statusLabel[item.status]
+    const type = item.maintenanceType.charAt(0).toUpperCase() + item.maintenanceType.slice(1)
+    const signatureBlock = item.signatureData
+      ? `<div class="signature-box"><img src="${item.signatureData}" alt="Firma" /></div>`
+      : `<div class="signature-box empty">Sin firma registrada</div>`
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${escapeHtml(item.folio)} - Mantenimiento</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #111827; margin: 0; padding: 24px; }
+            .sheet { max-width: 900px; margin: 0 auto; }
+            .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+            .title { font-size: 24px; font-weight: 700; }
+            .folio { font-size: 14px; color: #4b5563; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+            .card { border: 1px solid #d1d5db; border-radius: 14px; padding: 16px; background: #f9fafb; }
+            .label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+            .value { font-size: 15px; color: #111827; white-space: pre-wrap; word-break: break-word; }
+            .full { grid-column: 1 / -1; }
+            .signature-title { margin-top: 8px; margin-bottom: 8px; font-size: 14px; font-weight: 700; }
+            .signature-box { min-height: 180px; border: 2px dashed #9ca3af; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: #fff; padding: 8px; }
+            .signature-box.empty { color: #6b7280; font-size: 14px; }
+            .signature-box img { max-width: 100%; max-height: 160px; object-fit: contain; }
+            @media print { body { padding: 0; } .sheet { max-width: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="sheet">
+            <div class="header">
+              <div>
+                <div class="title">Reporte individual de mantenimiento</div>
+                <div class="folio">${escapeHtml(item.folio)}</div>
+              </div>
+              <div class="folio">Generado: ${escapeHtml(formatDate(new Date().toISOString()))}</div>
+            </div>
+
+            <div class="grid">
+              <div class="card"><span class="label">Sede</span><div class="value">${escapeHtml(siteName)}</div></div>
+              <div class="card"><span class="label">Estado</span><div class="value">${escapeHtml(status)}</div></div>
+              <div class="card"><span class="label">Tipo</span><div class="value">${escapeHtml(type)}</div></div>
+              <div class="card"><span class="label">Fecha</span><div class="value">${escapeHtml(formatDate(item.createdAt))}</div></div>
+              <div class="card full"><span class="label">Título</span><div class="value">${escapeHtml(item.title)}</div></div>
+              <div class="card full"><span class="label">Descripción</span><div class="value">${escapeHtml(item.description || "Sin descripción")}</div></div>
+              <div class="card full"><span class="label">Problema reportado</span><div class="value">${escapeHtml(item.reportedIssue || "Sin problema reportado")}</div></div>
+              <div class="card"><span class="label">Técnico</span><div class="value">${escapeHtml(item.technicianName || "Sin asignar")}</div></div>
+              <div class="card"><span class="label">Solicitado por</span><div class="value">${escapeHtml(item.requestedBy || "No definido")}</div></div>
+              <div class="card full">
+                <div class="signature-title">Firma de conformidad</div>
+                ${signatureBlock}
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `)
+
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => printWindow.print(), 300)
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-end sm:justify-between">
@@ -125,12 +208,16 @@ export function MaintenanceList({ maintenances, sites, onUpdate }: Props) {
                 <p className="mt-1">Usa el boton <span className="font-semibold">Finalizar y pedir firma</span>. Se abrira una ventana donde aparece el area para firmar con el dedo.</p>
               </div>
               <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:flex-wrap">
-                <Button variant="outline" className="gap-2 w-full sm:w-auto" onClick={() => setEditItem({ ...item })}>
+                <Button variant="outline" className="w-full gap-2 sm:w-auto" onClick={() => setEditItem({ ...item })}>
                   <Pencil className="h-4 w-4" />
                   Editar
                 </Button>
+                <Button variant="outline" className="w-full gap-2 sm:w-auto" onClick={() => handleDownloadPDF(item)}>
+                  <FileText className="h-4 w-4" />
+                  PDF individual
+                </Button>
                 {item.status !== "cerrado" && (
-                  <Button className="gap-2 w-full sm:w-auto" onClick={() => setCloseItem(item)}>
+                  <Button className="w-full gap-2 sm:w-auto" onClick={() => setCloseItem(item)}>
                     <ShieldCheck className="h-4 w-4" />
                     Finalizar y pedir firma
                   </Button>

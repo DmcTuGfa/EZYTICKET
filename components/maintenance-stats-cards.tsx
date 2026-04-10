@@ -10,19 +10,43 @@ interface Props {
 
 export function MaintenanceStatsCards({ stats }: Props) {
   const cards = [
-    { title: "Total", value: stats.total, icon: ClipboardCheck, color: "text-primary", description: "Mantenimientos registrados" },
-    { title: "Preventivos", value: stats.byType.preventivo, icon: CircleDot, color: "text-chart-2", description: "Programados y preventivos" },
-    { title: "Correctivos", value: stats.byType.correctivo, icon: Wrench, color: "text-warning", description: "Atencion correctiva" },
-    { title: "Cerrados", value: stats.byStatus.cerrado, icon: CheckCircle, color: "text-success", description: "Con firma de cierre" },
+    {
+      title: "Total Mantenimientos",
+      value: stats.total,
+      icon: ClipboardCheck,
+      description: "Registros acumulados",
+      color: "text-primary",
+    },
+    {
+      title: "Preventivos",
+      value: stats.byType.preventivo,
+      icon: CircleDot,
+      description: "Trabajo programado",
+      color: "text-chart-2",
+    },
+    {
+      title: "Correctivos",
+      value: stats.byType.correctivo,
+      icon: Wrench,
+      description: "Atencion correctiva",
+      color: "text-warning",
+    },
+    {
+      title: "Cerrados",
+      value: stats.byStatus.cerrado,
+      icon: CheckCircle,
+      description: "Con firma de cierre",
+      color: "text-success",
+    },
   ]
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
-        <Card key={card.title} className="bg-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 pb-2">
+        <Card key={card.title} className="border-border bg-card shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
-            <card.icon className={`h-4 w-4 shrink-0 ${card.color}`} />
+            <card.icon className={`h-4 w-4 ${card.color}`} />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${card.color}`}>{card.value}</div>
