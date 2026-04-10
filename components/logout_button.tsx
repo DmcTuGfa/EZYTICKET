@@ -1,14 +1,16 @@
-import { logoutAction } from "@/app/actions/auth-actions"
+"use client"
 
 export default function LogoutButton() {
   return (
-    <form action={logoutAction}>
-      <button
-        type="submit"
-        className="rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5"
-      >
-        Cerrar sesión
-      </button>
-    </form>
+    <button
+      type="button"
+      onClick={async () => {
+        await fetch("/api/logout", { method: "POST" })
+        window.location.href = "/login"
+      }}
+      className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-xs hover:bg-accent hover:text-accent-foreground"
+    >
+      Cerrar sesión
+    </button>
   )
 }

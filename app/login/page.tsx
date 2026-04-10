@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
@@ -8,40 +8,31 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  async function handleLogin(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setError("")
     setLoading(true)
 
-    const form = new FormData(e.currentTarget)
+    const formData = new FormData(event.currentTarget)
+    const response = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: formData.get("email"),
+        password: formData.get("password"),
+      }),
+    })
 
-    try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: form.get("email"),
-          password: form.get("password"),
-        }),
-      })
+    const data = await response.json()
+    setLoading(false)
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || "No se pudo iniciar sesión")
-        return
-      }
-
-      router.push("/")
-      router.refresh()
-    } catch (err) {
-      console.error(err)
-      setError("Error al iniciar sesión")
-    } finally {
-      setLoading(false)
+    if (!response.ok) {
+      setError(data.error || "Error al iniciar sesión")
+      return
     }
+
+    router.push("/")
+    router.refresh()
   }
 
   return (
@@ -71,14 +62,14 @@ export default function LoginPage() {
             />
           </div>
 
-          {error ? <p className="text-sm text-red-400">{error}</p> : null}
+          {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full rounded-xl bg-blue-600 px-4 py-3 font-medium hover:bg-blue-500 disabled:opacity-60"
           >
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? "Validando..." : "Entrar"}
           </button>
         </form>
       </div>

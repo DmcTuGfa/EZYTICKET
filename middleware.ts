@@ -11,9 +11,7 @@ export function middleware(req: NextRequest) {
     pathname === "/icon.svg" ||
     pathname === "/icon-light-32x32.png" ||
     pathname === "/icon-dark-32x32.png" ||
-    pathname === "/apple-icon.png" ||
-    pathname.startsWith("/api/login") ||
-    pathname.startsWith("/api/logout")
+    pathname === "/apple-icon.png"
 
   if (!session && !isPublicPath) {
     return NextResponse.redirect(new URL("/login", req.url))
@@ -27,5 +25,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 }
