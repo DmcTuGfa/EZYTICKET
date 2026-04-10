@@ -1,38 +1,9 @@
-// Nuevos estatus incluyendo esperas
-export type TicketStatus = 
-  | "abierto" 
-  | "en-progreso" 
-  | "en-espera-usuario" 
-  | "en-espera-area" 
-  | "en-espera-proveedor" 
-  | "resuelto" 
-  | "cerrado"
-
+export type TicketStatus = "abierto" | "en-progreso" | "en-espera-usuario" | "en-espera-area" | "en-espera-proveedor" | "resuelto" | "cerrado"
 export type TicketPriority = "baja" | "media" | "alta" | "urgente"
 export type TicketCategory = "soporte" | "bug" | "mejora" | "consulta" | "otro"
-
-// Clasificación final (obligatorio al cerrar)
 export type ClasificacionFinal = "tecnica" | "operativa" | "solicitud" | "proyecto"
-
-// Causa raíz (obligatorio al cerrar)
-export type CausaRaiz = 
-  | "falla-tecnica" 
-  | "error-captura" 
-  | "uso-incorrecto" 
-  | "falta-informacion" 
-  | "proveedor-externo"
-
-// Áreas responsables
-export type AreaResponsable = 
-  | "TI" 
-  | "RH" 
-  | "Ventas" 
-  | "Produccion" 
-  | "Finanzas" 
-  | "Compras" 
-  | "Calidad" 
-  | "Logistica"
-  | "Otro"
+export type CausaRaiz = "falla-tecnica" | "error-captura" | "uso-incorrecto" | "falta-informacion" | "otro"
+export type AreaResponsable = "TI" | "RH" | "Ventas" | "Produccion" | "Finanzas" | "Compras" | "Calidad" | "Logistica" | "Otro"
 
 export interface Ticket {
   id: string
@@ -84,4 +55,42 @@ export interface TicketReportRow {
   causa: string
   tiempoResolucion: string
   estado: string
+}
+
+export type MaintenanceType = "preventivo" | "correctivo"
+export type MaintenanceStatus = "abierto" | "en_proceso" | "pendiente_confirmacion" | "cerrado" | "cancelado"
+
+export interface Site {
+  id: number
+  code: string
+  name: string
+  address?: string
+  description?: string
+  active: boolean
+}
+
+export interface Maintenance {
+  id: number
+  folio: string
+  maintenanceType: MaintenanceType
+  status: MaintenanceStatus
+  siteId: number
+  siteName?: string
+  title: string
+  description?: string
+  reportedIssue?: string
+  workPerformed?: string
+  recommendations?: string
+  scheduledDate?: string
+  openedAt: string
+  completedAt?: string
+  technicianName?: string
+  requestedByName?: string
+  confirmedByName?: string
+  confirmedByPosition?: string
+  signatureData?: string
+  mobileOnly: boolean
+  createdBy?: string
+  createdAt: string
+  updatedAt: string
 }

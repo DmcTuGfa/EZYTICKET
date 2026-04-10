@@ -1,11 +1,13 @@
 "use server"
 
-import { signIn, signOut } from "@/auth"
-
-export async function googleSignInAction() {
-  await signIn("google", { redirectTo: "/" })
-}
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 
 export async function signOutAction() {
-  await signOut({ redirectTo: "/login" })
+  const cookieStore = await cookies()
+  cookieStore.set("app_session", "", {
+    maxAge: 0,
+    path: "/",
+  })
+  redirect("/login")
 }
