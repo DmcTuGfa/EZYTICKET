@@ -2,10 +2,10 @@
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Ticket, Activity, Settings, ChevronLeft, ChevronRight, FileBarChart, Wrench } from "lucide-react"
+import { LayoutDashboard, Ticket, Settings, ChevronLeft, ChevronRight, FileBarChart, Wrench } from "lucide-react"
 import { useState } from "react"
 
-type View = "dashboard" | "tickets" | "maintenances" | "activity" | "reports"
+type View = "dashboard" | "tickets" | "maintenances" | "reports"
 
 interface AppSidebarProps {
   currentView: View
@@ -19,7 +19,6 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
     { id: "dashboard" as View, label: "Dashboard", icon: LayoutDashboard },
     { id: "tickets" as View, label: "Tickets", icon: Ticket },
     { id: "maintenances" as View, label: "Mantenimientos", icon: Wrench },
-    { id: "activity" as View, label: "Actividad", icon: Activity },
     { id: "reports" as View, label: "Reportes", icon: FileBarChart },
   ]
 

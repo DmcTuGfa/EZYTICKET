@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ActivityFeed } from "@/components/activity-feed"
 import { AppSidebar } from "@/components/app-sidebar"
 import { MaintenanceCharts } from "@/components/maintenance-charts"
 import { MaintenanceForm } from "@/components/maintenance-form"
@@ -13,13 +12,13 @@ import { StatsCards } from "@/components/stats-cards"
 import { TicketCharts } from "@/components/ticket-charts"
 import { TicketForm } from "@/components/ticket-form"
 import { TicketList } from "@/components/ticket-list"
-import type { Activity, Maintenance, MaintenanceStats, Site, Ticket, TicketReportRow, TicketStats } from "@/lib/types"
+import type { Maintenance, MaintenanceStats, Site, Ticket, TicketReportRow, TicketStats } from "@/lib/types"
 
-type View = "dashboard" | "tickets" | "maintenances" | "activity" | "reports"
+type View = "dashboard" | "tickets" | "maintenances" | "reports"
 
 interface HomeClientProps {
   tickets: Ticket[]
-  activities: Activity[]
+  activities: unknown[]
   stats: TicketStats
   report: TicketReportRow[]
   maintenances: Maintenance[]
@@ -27,7 +26,7 @@ interface HomeClientProps {
   sites: Site[]
 }
 
-export function HomeClient({ tickets, activities, stats, report, maintenances, maintenanceStats, sites }: HomeClientProps) {
+export function HomeClient({ tickets, stats, report, maintenances, maintenanceStats, sites }: HomeClientProps) {
   const [currentView, setCurrentView] = useState<View>("dashboard")
   const router = useRouter()
 
@@ -56,15 +55,13 @@ export function HomeClient({ tickets, activities, stats, report, maintenances, m
               {currentView === "dashboard" && "Panel de Control"}
               {currentView === "tickets" && "Gestion de Tickets"}
               {currentView === "maintenances" && "Gestion de Mantenimientos"}
-              {currentView === "activity" && "Registro de Actividad"}
               {currentView === "reports" && "Reportes"}
             </h1>
             <p className="text-sm text-muted-foreground">
               {currentView === "dashboard" && "Vista general del sistema de tickets y mantenimientos"}
               {currentView === "tickets" && "Administra y da seguimiento a los tickets"}
-              {currentView === "maintenances" && "Edita, cierra y controla mantenimientos por sede"}
-              {currentView === "activity" && "Historial de cambios y actualizaciones"}
-              {currentView === "reports" && "Genera y exporta reportes del sistema"}
+              {currentView === "maintenances" && "Edita, cierra con firma y consulta historial por sede"}
+              {currentView === "reports" && "Consulta reportes de tickets y mantenimientos"}
             </p>
           </div>
           {currentView === "tickets" ? <TicketForm onTicketCreated={refresh} /> : null}
@@ -79,7 +76,6 @@ export function HomeClient({ tickets, activities, stats, report, maintenances, m
               <MaintenanceStatsCards stats={maintenanceStats} />
               <MaintenanceCharts stats={maintenanceStats} />
               <div className="grid gap-6 lg:grid-cols-2">
-                <ActivityFeed activities={activities.slice(0, 10)} />
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-foreground">Tickets Recientes</h3>
                   <div className="space-y-3">
@@ -129,20 +125,46 @@ export function HomeClient({ tickets, activities, stats, report, maintenances, m
                     ))}
                   </div>
                 </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground">Mantenimientos Recientes</h3>
+                  <div className="space-y-3">
+                    {maintenances.slice(0, 5).map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-card/80 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-sm text-primary">{item.folio}</span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground">
+                              {item.maintenanceType}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{item.siteName || `Sede ${item.siteId}`}</span>
+                          </div>
+                          <p className="mt-1 text-sm text-foreground truncate">{item.title}</p>
+                        </div>
+                        <span className="ml-4 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap bg-muted text-muted-foreground">
+                          {item.status === "en_proceso" ? "En proceso" : item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </>
           )}
 
           {currentView === "tickets" && <TicketList tickets={tickets} onUpdate={refresh} />}
           {currentView === "maintenances" && <MaintenanceList maintenances={maintenances} sites={sites} onUpdate={refresh} />}
-
-          {currentView === "activity" && (
-            <div className="max-w-4xl">
-              <ActivityFeed activities={activities} />
-            </div>
+          {currentView === "reports" && (
+            <ReportSection
+              stats={stats}
+              report={report}
+              maintenances={maintenances}
+              maintenanceStats={maintenanceStats}
+            />
           )}
-
-          {currentView === "reports" && <ReportSection stats={stats} report={report} />}
         </div>
       </main>
     </div>

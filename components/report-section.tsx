@@ -4,12 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Download, FileSpreadsheet, FileText } from "lucide-react"
-import type { TicketStats } from "@/lib/types"
+import { Download, FileSpreadsheet } from "lucide-react"
+import type { Maintenance, MaintenanceStats, TicketReportRow, TicketStats } from "@/lib/types"
 
 interface ReportSectionProps {
   stats: TicketStats
-  report: import("@/lib/types").TicketReportRow[]
+  report: TicketReportRow[]
+  maintenances: Maintenance[]
+  maintenanceStats: MaintenanceStats
 }
 
 const statusColors: Record<string, string> = {
@@ -19,7 +21,8 @@ const statusColors: Record<string, string> = {
   "en-espera-area": "bg-chart-3/20 text-chart-3",
   "en-espera-proveedor": "bg-chart-4/20 text-chart-4",
   resuelto: "bg-success/20 text-success",
-  cerrado: "bg-muted-foreground/20 text-muted-foreground"
+  cerrado: "bg-muted-foreground/20 text-muted-foreground",
+  en_proceso: "bg-chart-1/20 text-chart-1",
 }
 
 const statusLabels: Record<string, string> = {
@@ -29,12 +32,12 @@ const statusLabels: Record<string, string> = {
   "en-espera-area": "Espera Area",
   "en-espera-proveedor": "Espera Proveedor",
   resuelto: "Resuelto",
-  cerrado: "Cerrado"
+  cerrado: "Cerrado",
+  en_proceso: "En proceso",
 }
 
-export function ReportSection({ stats, report }: ReportSectionProps) {
-
-  const handleExportCSV = () => {
+export function ReportSection({ stats, report, maintenances, maintenanceStats }: ReportSectionProps) {
+  const handleExportTicketsCSV = () => {
     const headers = ["ID", "Fecha", "Titulo", "Area", "Tipo", "Causa", "Tiempo Resolucion", "Estado"]
     const rows = report.map((r) => [
       r.id,
@@ -54,196 +57,151 @@ export function ReportSection({ stats, report }: ReportSectionProps) {
     link.click()
   }
 
-  // Resumen estadístico
+  const handleExportMaintenancesCSV = () => {
+    const headers = ["Folio", "Tipo", "Estado", "Sede", "Titulo", "Tecnico", "Solicitado por", "Fecha"]
+    const rows = maintenances.map((m) => [
+      m.folio,
+      m.maintenanceType,
+      m.status,
+      `"${(m.siteName || `Sede ${m.siteId}`).replace(/"/g, '""')}"`,
+      `"${(m.title || "").replace(/"/g, '""')}"`,
+      `"${(m.technicianName || "").replace(/"/g, '""')}"`,
+      `"${(m.requestedBy || "").replace(/"/g, '""')}"`,
+      new Date(m.createdAt).toLocaleDateString("es-MX"),
+    ])
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+    link.download = `reporte-mantenimientos-${new Date().toISOString().split("T")[0]}.csv`
+    link.click()
+  }
+
   const closedTickets = stats.byStatus.resuelto + stats.byStatus.cerrado
   const openTickets = stats.total - closedTickets
-  const tecnicoCount = stats.byClasificacion.tecnica || 0
-  const operativoCount = stats.byClasificacion.operativa || 0
-  const solicitudCount = stats.byClasificacion.solicitud || 0
-  const proyectoCount = stats.byClasificacion.proyecto || 0
 
   return (
     <div className="space-y-6">
-      {/* Resumen */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card className="bg-card border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Tickets</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Tickets Totales</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">{stats.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {openTickets} abiertos / {closedTickets} cerrados
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">Abiertos: {openTickets} · Cerrados: {closedTickets}</p>
           </CardContent>
         </Card>
-
         <Card className="bg-card border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Tecnicos</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Mantenimientos Totales</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-chart-1">{tecnicoCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {closedTickets > 0 ? Math.round((tecnicoCount / closedTickets) * 100) : 0}% de cerrados
-            </p>
+            <div className="text-3xl font-bold text-primary">{maintenanceStats.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Preventivos: {maintenanceStats.byType.preventivo} · Correctivos: {maintenanceStats.byType.correctivo}</p>
           </CardContent>
         </Card>
-
         <Card className="bg-card border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Operativos</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Mantenimientos Cerrados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-success">{operativoCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {closedTickets > 0 ? Math.round((operativoCount / closedTickets) * 100) : 0}% de cerrados
-            </p>
+            <div className="text-3xl font-bold text-success">{maintenanceStats.byStatus.cerrado}</div>
+            <p className="text-xs text-muted-foreground mt-1">Con firma registrada</p>
           </CardContent>
         </Card>
-
         <Card className="bg-card border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Tiempo Promedio</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Sedes con historial</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-warning">
-              {stats.avgResolutionTime > 24 
-                ? `${Math.round(stats.avgResolutionTime / 24)}d`
-                : `${stats.avgResolutionTime}h`}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              De resolucion
-            </p>
+            <div className="text-3xl font-bold text-primary">{Object.keys(maintenanceStats.bySite).length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Distribucion por sede</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Botones de exportación */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-foreground">Exportar Reporte</CardTitle>
-              <CardDescription>Descarga el reporte completo de tickets</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleExportCSV} className="gap-2">
-                <FileSpreadsheet className="h-4 w-4" />
-                Exportar CSV
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            El reporte incluye: ID, Fecha, Titulo, Area, Tipo (clasificacion), Causa raiz, Tiempo de resolucion y Estado.
-          </p>
-          
-          {/* Vista previa del reporte */}
-          <div className="rounded-md border border-border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-secondary/50 hover:bg-secondary/50">
-                  <TableHead className="text-muted-foreground">ID</TableHead>
-                  <TableHead className="text-muted-foreground">Fecha</TableHead>
-                  <TableHead className="text-muted-foreground">Titulo</TableHead>
-                  <TableHead className="text-muted-foreground">Area</TableHead>
-                  <TableHead className="text-muted-foreground">Tipo</TableHead>
-                  <TableHead className="text-muted-foreground">Causa</TableHead>
-                  <TableHead className="text-muted-foreground">T. Resolucion</TableHead>
-                  <TableHead className="text-muted-foreground">Estado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {report.slice(0, 10).map((row) => (
-                  <TableRow key={row.id} className="hover:bg-secondary/30">
-                    <TableCell className="font-mono text-sm text-primary">{row.id}</TableCell>
-                    <TableCell className="text-muted-foreground">{row.fecha}</TableCell>
-                    <TableCell className="max-w-[150px] truncate">{row.titulo}</TableCell>
-                    <TableCell>{row.area}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={
-                        row.tipo === "Tecnica" ? "bg-chart-1/20 text-chart-1 border-chart-1/30" :
-                        row.tipo === "Operativa" ? "bg-success/20 text-success border-success/30" :
-                        row.tipo === "Solicitud" ? "bg-warning/20 text-warning border-warning/30" :
-                        row.tipo === "Proyecto" ? "bg-chart-5/20 text-chart-5 border-chart-5/30" :
-                        "bg-muted text-muted-foreground"
-                      }>
-                        {row.tipo}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{row.causa}</TableCell>
-                    <TableCell className="text-muted-foreground">{row.tiempoResolucion}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={statusColors[row.estado] || "bg-muted text-muted-foreground"}>
-                        {statusLabels[row.estado] || row.estado}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          {report.length > 10 && (
-            <p className="text-sm text-muted-foreground mt-4 text-center">
-              Mostrando 10 de {report.length} registros. Exporta el CSV para ver todos.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Resumen por clasificación */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-2">
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground">Resumen por Clasificacion</CardTitle>
-            <CardDescription>Distribucion de tickets cerrados por tipo</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <div>
+              <CardTitle>Reporte de Tickets</CardTitle>
+              <CardDescription>Exporta y consulta tickets cerrados y resueltos</CardDescription>
+            </div>
+            <Button variant="outline" onClick={handleExportTicketsCSV} className="gap-2">
+              <Download className="h-4 w-4" />
+              <FileSpreadsheet className="h-4 w-4" />
+              CSV
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { label: "Tecnica", value: tecnicoCount, color: "bg-chart-1" },
-                { label: "Operativa", value: operativoCount, color: "bg-success" },
-                { label: "Solicitud", value: solicitudCount, color: "bg-warning" },
-                { label: "Proyecto", value: proyectoCount, color: "bg-chart-5" }
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-4">
-                  <div className={`w-3 h-3 rounded-full ${item.color}`} />
-                  <span className="flex-1 text-sm text-foreground">{item.label}</span>
-                  <span className="text-sm font-medium text-foreground">{item.value}</span>
-                  <span className="text-xs text-muted-foreground w-12 text-right">
-                    {closedTickets > 0 ? Math.round((item.value / closedTickets) * 100) : 0}%
-                  </span>
-                </div>
-              ))}
+            <div className="rounded-md border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Titulo</TableHead>
+                    <TableHead>Area</TableHead>
+                    <TableHead>Estado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {report.slice(0, 10).map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="font-mono text-xs">{row.id}</TableCell>
+                      <TableCell>{row.fecha}</TableCell>
+                      <TableCell className="max-w-[220px] truncate">{row.titulo}</TableCell>
+                      <TableCell>{row.area}</TableCell>
+                      <TableCell>
+                        <Badge className={statusColors[row.estado] || ""}>{statusLabels[row.estado] || row.estado}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground">Resumen por Area</CardTitle>
-            <CardDescription>Distribucion de tickets por area responsable</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <div>
+              <CardTitle>Reporte de Mantenimientos</CardTitle>
+              <CardDescription>Historial por sede, tipo y estado</CardDescription>
+            </div>
+            <Button variant="outline" onClick={handleExportMaintenancesCSV} className="gap-2">
+              <Download className="h-4 w-4" />
+              <FileSpreadsheet className="h-4 w-4" />
+              CSV
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {Object.entries(stats.byArea)
-                .filter(([_, value]) => value > 0)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 6)
-                .map(([area, count], index) => (
-                  <div key={area} className="flex items-center gap-4">
-                    <div className={`w-3 h-3 rounded-full ${
-                      ["bg-chart-1", "bg-success", "bg-warning", "bg-chart-5", "bg-chart-4", "bg-destructive"][index]
-                    }`} />
-                    <span className="flex-1 text-sm text-foreground">{area}</span>
-                    <span className="text-sm font-medium text-foreground">{count}</span>
-                    <span className="text-xs text-muted-foreground w-12 text-right">
-                      {stats.total > 0 ? Math.round((count / stats.total) * 100) : 0}%
-                    </span>
-                  </div>
-                ))}
+            <div className="rounded-md border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Folio</TableHead>
+                    <TableHead>Sede</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Titulo</TableHead>
+                    <TableHead>Estado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {maintenances.slice(0, 10).map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="font-mono text-xs">{row.folio}</TableCell>
+                      <TableCell>{row.siteName || `Sede ${row.siteId}`}</TableCell>
+                      <TableCell>{row.maintenanceType}</TableCell>
+                      <TableCell className="max-w-[220px] truncate">{row.title}</TableCell>
+                      <TableCell>
+                        <Badge className={statusColors[row.status] || ""}>{statusLabels[row.status] || row.status}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>

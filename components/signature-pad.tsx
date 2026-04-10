@@ -21,18 +21,23 @@ export function SignaturePad({ value, onChange }: SignaturePadProps) {
 
     const ratio = window.devicePixelRatio || 1
     const width = canvas.offsetWidth || 500
-    const height = canvas.offsetHeight || 180
+    const height = canvas.offsetHeight || 220
     canvas.width = width * ratio
     canvas.height = height * ratio
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.scale(ratio, ratio)
-    ctx.lineWidth = 2
+    ctx.lineWidth = 2.5
     ctx.lineCap = "round"
+    ctx.lineJoin = "round"
     ctx.strokeStyle = "#111827"
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(0, 0, width, height)
 
     if (value) {
       const img = new Image()
       img.onload = () => {
         ctx.clearRect(0, 0, width, height)
+        ctx.fillRect(0, 0, width, height)
         ctx.drawImage(img, 0, 0, width, height)
       }
       img.src = value
@@ -50,6 +55,7 @@ export function SignaturePad({ value, onChange }: SignaturePadProps) {
   }
 
   const start = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    event.preventDefault()
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext("2d")
@@ -62,6 +68,7 @@ export function SignaturePad({ value, onChange }: SignaturePadProps) {
 
   const move = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!drawing.current) return
+    event.preventDefault()
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext("2d")
@@ -86,30 +93,36 @@ export function SignaturePad({ value, onChange }: SignaturePadProps) {
     if (!canvas) return
     const ctx = canvas.getContext("2d")
     if (!ctx) return
+    const width = canvas.width / (window.devicePixelRatio || 1)
+    const height = canvas.height / (window.devicePixelRatio || 1)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(0, 0, width, height)
     setHasSignature(false)
     onChange("")
   }
 
   return (
     <div className="space-y-2">
-      <canvas
-        ref={canvasRef}
-        className="h-40 w-full rounded-md border border-border bg-white touch-none"
-        onMouseDown={start}
-        onMouseMove={move}
-        onMouseUp={finish}
-        onMouseLeave={finish}
-        onTouchStart={start}
-        onTouchMove={move}
-        onTouchEnd={finish}
-      />
-      <div className="flex items-center justify-between">
+      <div className="rounded-lg border border-border bg-white p-2">
+        <canvas
+          ref={canvasRef}
+          className="block h-52 w-full rounded-md bg-white touch-none"
+          onMouseDown={start}
+          onMouseMove={move}
+          onMouseUp={finish}
+          onMouseLeave={finish}
+          onTouchStart={start}
+          onTouchMove={move}
+          onTouchEnd={finish}
+        />
+      </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted-foreground">
-          Firma aqui antes de cerrar el mantenimiento.
+          Firma dentro del recuadro blanco. En celular usa el dedo. En computadora usa el mouse.
         </p>
         <Button type="button" variant="outline" onClick={clear}>
-          Limpiar
+          Limpiar firma
         </Button>
       </div>
       {!hasSignature && <p className="text-xs text-destructive">La firma es obligatoria para cerrar.</p>}
