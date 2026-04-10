@@ -84,8 +84,7 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
       r.tiempoResolucion,
       r.estado,
     ])
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("
-")
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
@@ -105,8 +104,7 @@ export function ReportSection({ stats, report, maintenances, maintenanceStats }:
       `"${(m.requestedBy || "").replace(/"/g, '""')}"`,
       new Date(m.createdAt).toLocaleDateString("es-MX"),
     ])
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("
-")
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
