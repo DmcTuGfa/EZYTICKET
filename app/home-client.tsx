@@ -34,7 +34,7 @@ interface HomeClientProps {
   } | null
 }
 
-export function HomeClient({ tickets, maintenances, sites, activities, stats, report, user }: HomeClientProps) {
+export default function HomeClient({ tickets, maintenances, sites, activities, stats, report, user }: HomeClientProps) {
   const [currentView, setCurrentView] = useState<View>("dashboard")
   const router = useRouter()
   const refresh = useCallback(() => { router.refresh() }, [router])
